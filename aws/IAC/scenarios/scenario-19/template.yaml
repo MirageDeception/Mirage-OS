@@ -1,0 +1,169 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Deception Scenario 21 - CloudFormation Stack Outputs Lure: Exposed Infrastructure Secrets.
+  A minimal stack that creates SSM parameters as placeholders but exposes
+  realistic-looking credentials in its stack outputs and cross-stack exports.
+  Discovery role: cfn-audit-readonly-role.
+
+Parameters:
+  AccountId:
+    Type: String
+    Description: AWS Account ID for trust and resource policies
+
+Resources:
+
+  # ---------------------------------------------------------------
+  # IAM Role (Discovery) — cfn-audit-readonly-role
+  # Assumable by any principal in the account. Grants read-only
+  # access to CloudFormation stack metadata, outputs, and exports.
+  # ---------------------------------------------------------------
+  CfnAuditReadonlyRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: cfn-audit-readonly-role
+      Description: Read-only CloudFormation audit access for compliance team
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AccountId}:root'
+            Action: 'sts:AssumeRole'
+      Tags:
+        - Key: Environment
+          Value: production
+        - Key: Project
+          Value: core-infrastructure
+        - Key: ManagedBy
+          Value: terraform
+        - Key: CostCenter
+          Value: CC-1050
+
+  CfnAuditReadonlyPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: cfn-audit-readonly-policy
+      Roles:
+        - !Ref CfnAuditReadonlyRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: CloudFormationReadOnly
+            Effect: Allow
+            Action:
+              - 'cloudformation:ListStacks'
+              - 'cloudformation:DescribeStacks'
+              - 'cloudformation:ListExports'
+              - 'cloudformation:GetTemplate'
+            Resource: '*'
+
+  # ---------------------------------------------------------------
+  # Placeholder SSM Parameters — minimal resources so the stack
+  # has something to create. The real lure is in the Outputs.
+  # ---------------------------------------------------------------
+  InfraEndpointParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /prod/core-infra/endpoints
+      Description: Production core infrastructure service endpoints
+      Type: String
+      Tier: Standard
+      Value: !Sub |
+        {
+          "database": "prod-core-db.c9aksj2e7rzo.us-west-2.rds.amazonaws.com:5432",
+          "cache": "prod-cache.r3k8m2.0001.usw2.cache.amazonaws.com:6379",
+          "api_gateway": "https://k7x9m2p4q1.execute-api.us-west-2.amazonaws.com/prod",
+          "admin_dashboard": "https://admin.prod.internal.corp",
+          "vpc_id": "vpc-0a1b2c3d4e5f67890",
+          "private_subnets": ["subnet-0a1b2c3d4e5f6789a", "subnet-0b2c3d4e5f6789a1b"],
+          "db_security_group": "sg-0a1b2c3d4e5f67890"
+        }
+      Tags:
+        Environment: production
+        Project: core-infrastructure
+        ManagedBy: terraform
+        CostCenter: CC-1050
+
+  InfraSecretsParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /prod/core-infra/secrets-ref
+      Description: Production core infrastructure secrets reference map
+      Type: String
+      Tier: Standard
+      Value: !Sub |
+        {
+          "database_password_ref": "arn:aws:secretsmanager:us-west-2:${AccountId}:secret:prod/core-db/master",
+          "api_key_ref": "arn:aws:secretsmanager:us-west-2:${AccountId}:secret:prod/api-gateway/key",
+          "redis_auth_ref": "arn:aws:secretsmanager:us-west-2:${AccountId}:secret:prod/redis/auth-token",
+          "last_audit": "2026-04-20T14:30:00Z"
+        }
+      Tags:
+        Environment: production
+        Project: core-infrastructure
+        ManagedBy: terraform
+        CostCenter: CC-1050
+
+# ---------------------------------------------------------------
+# Stack Outputs — THE LURE
+# These outputs contain realistic-looking credentials in plaintext.
+# This mimics a common real-world misconfiguration where sensitive
+# values are accidentally exposed in CloudFormation outputs.
+# ---------------------------------------------------------------
+Outputs:
+  DatabaseEndpoint:
+    Description: Production RDS PostgreSQL primary endpoint
+    Value: prod-core-db.c9aksj2e7rzo.us-west-2.rds.amazonaws.com
+    Export:
+      Name: prod-database-endpoint
+
+  DatabasePassword:
+    Description: Production database master password
+    Value: 'Pr0d#Db$M@ster!2026xKqL9'
+
+  ApiGatewayUrl:
+    Description: Production API Gateway base URL
+    Value: https://k7x9m2p4q1.execute-api.us-west-2.amazonaws.com/prod
+    Export:
+      Name: prod-api-gateway-url
+
+  ApiKey:
+    Description: Production API Gateway API key
+    Value: 'ak_prod_V8kN3mP7qR2wX5jL9tY4bF6hC1dA0eG'
+
+  RedisEndpoint:
+    Description: Production ElastiCache Redis primary endpoint
+    Value: prod-cache.r3k8m2.0001.usw2.cache.amazonaws.com
+    Export:
+      Name: prod-redis-endpoint
+
+  RedisAuthToken:
+    Description: Production Redis AUTH token
+    Value: 'rT#2026pR0d!cAcHe$sEcUrE9xMkL3'
+
+  AdminDashboardUrl:
+    Description: Production admin dashboard URL
+    Value: https://admin.prod.internal.corp
+
+  VpcId:
+    Description: Production VPC ID
+    Value: vpc-0a1b2c3d4e5f67890
+    Export:
+      Name: prod-vpc-id
+
+  PrivateSubnetIds:
+    Description: Production private subnet IDs (comma-separated)
+    Value: subnet-0a1b2c3d4e5f6789a,subnet-0b2c3d4e5f6789a1b
+    Export:
+      Name: prod-private-subnet-ids
+
+  DbSecurityGroupId:
+    Description: Production database security group ID
+    Value: sg-0a1b2c3d4e5f67890
+    Export:
+      Name: prod-db-security-group-id
+
+  DiscoveryRoleArn:
+    Description: ARN of the discovery role (cfn-audit-readonly-role)
+    Value: !GetAtt CfnAuditReadonlyRole.Arn

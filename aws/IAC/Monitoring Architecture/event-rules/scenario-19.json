@@ -1,0 +1,25 @@
+{
+  "name": "deception-scenario-19",
+  "description": "CloudFormation Stack Outputs — AssumeRole + DescribeStacks on decoy stack",
+  "scenario_number": 19,
+  "scenario_name": "CloudFormation Stack Outputs Exposed Secrets Lure",
+  "event_pattern": {
+    "source": ["aws.sts", "aws.cloudformation"],
+    "detail-type": ["AWS API Call via CloudTrail"],
+    "detail": {
+      "eventName": ["AssumeRole", "DescribeStacks"],
+      "$or": [
+        {
+          "requestParameters": {
+            "roleName": ["cfn-audit-readonly-role"]
+          }
+        },
+        {
+          "requestParameters": {
+            "stackName": [{"prefix": "prod-core-infrastructure"}]
+          }
+        }
+      ]
+    }
+  }
+}

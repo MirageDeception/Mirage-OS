@@ -1,0 +1,25 @@
+{
+  "name": "deception-scenario-12",
+  "description": "SNS Critical Alerts Topic — AssumeRole + GetTopicAttributes + ListSubscriptionsByTopic + Publish",
+  "scenario_number": 12,
+  "scenario_name": "SNS Critical Alerts Topic Lure",
+  "event_pattern": {
+    "source": ["aws.sts", "aws.sns"],
+    "detail-type": ["AWS API Call via CloudTrail"],
+    "detail": {
+      "eventName": ["AssumeRole", "GetTopicAttributes", "ListSubscriptionsByTopic", "Publish"],
+      "$or": [
+        {
+          "requestParameters": {
+            "roleName": ["alerts-readonly-role"]
+          }
+        },
+        {
+          "requestParameters": {
+            "topicArn": [{"suffix": ":prod-alerts-critical"}]
+          }
+        }
+      ]
+    }
+  }
+}

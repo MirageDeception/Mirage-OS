@@ -1,0 +1,14 @@
+{
+  "kms_key_arn": "arn:aws:kms:us-west-2:839174625013:key/a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "kms_key_alias": "alias/prod-core-db-encryption",
+  "key_rotation_enabled": true,
+  "rotation_interval_days": 365,
+  "last_rotation": "2026-01-15T00:00:00Z",
+  "next_rotation": "2027-01-15T00:00:00Z",
+  "encryption_algorithm": "AES-256-GCM",
+  "tde_enabled": true,
+  "ssl_certificate_arn": "arn:aws:acm:us-west-2:839174625013:certificate/f8e7d6c5-b4a3-2190-fedc-ba0987654321",
+  "ssl_certificate_expiry": "2027-06-30T23:59:59Z",
+  "key_administrator_role": "arn:aws:iam::839174625013:role/prod-kms-admin-role",
+  "see_also": "/prod/db/monitoring"
+}

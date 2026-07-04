@@ -1,0 +1,682 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Cloud Deception — CSC Prod Detection Rules (913511275171, us-west-2).
+  Deployed AFTER the monitoring-brain stack.
+  Creates EventBridge rules on deception-global-event-bus that filter
+  forwarded events by scenario and invoke the Lambda processor.
+  This is the second-layer filter that reduces false positives.
+
+Parameters:
+  LambdaArn:
+    Type: String
+    Default: arn:aws:lambda:us-west-2:913511275171:function:deception-event-processor
+    Description: ARN of the deception event processor Lambda
+
+  InvokeLambdaRoleArn:
+    Type: String
+    Default: arn:aws:iam::913511275171:role/deception-eventbridge-invoke-lambda-role
+    Description: ARN of the role that allows EventBridge to invoke Lambda
+
+Resources:
+
+  # ===========================================================================
+  # SCENARIO 1 — S3 Terraform State Lure
+  # ===========================================================================
+  DetectionRuleScenario01:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: deception-detect-scenario-01
+      Description: "S3 Terraform State Lure - AssumeRole + GetObject on decoy bucket"
+      EventBusName: deception-global-event-bus
+      State: ENABLED
+      EventPattern:
+        source:
+          - aws.sts
+          - aws.s3
+        detail-type:
+          - AWS API Call via CloudTrail
+        detail:
+          eventName:
+            - AssumeRole
+            - GetObject
+          $or:
+            - requestParameters:
+                roleName:
+                  - infra-s3-data-readonly-role
+            - requestParameters:
+                bucketName:
+                  - prefix: infra-terraform-state-
+      Targets:
+        - Id: DeceptionLambda
+          Arn: !Ref LambdaArn
+          RoleArn: !Ref InvokeLambdaRoleArn
+
+  # ===========================================================================
+  # SCENARIO 2 — Secrets Manager Payment Credentials Lure
+  # ===========================================================================
+  DetectionRuleScenario02:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: deception-detect-scenario-02
+      Description: "Secrets Manager Payment Credentials - AssumeRole + GetSecretValue"
+      EventBusName: deception-global-event-bus
+      State: ENABLED
+      EventPattern:
+        source:
+          - aws.sts
+          - aws.secretsmanager
+        detail-type:
+          - AWS API Call via CloudTrail
+        detail:
+          eventName:
+            - AssumeRole
+            - GetSecretValue
+          $or:
+            - requestParameters:
+                roleName:
+                  - payment-secrets-readonly-role
+            - requestParameters:
+                secretId:
+                  - prefix: "prod/payment-gateway/"
+                  - prefix: "prod/internal-api/service-accounts"
+      Targets:
+        - Id: DeceptionLambda
+          Arn: !Ref LambdaArn
+          RoleArn: !Ref InvokeLambdaRoleArn
+
+  # ===========================================================================
+  # SCENARIO 3 — SSM Parameter Store Infrastructure Vault
+  # ===========================================================================
+  DetectionRuleScenario03:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: deception-detect-scenario-03
+      Description: "SSM Parameter Store Infrastructure Vault - AssumeRole + GetParameter"
+      EventBusName: deception-global-event-bus
+      State: ENABLED
+      EventPattern:
+        source:
+          - aws.sts
+          - aws.ssm
+        detail-type:
+          - AWS API Call via CloudTrail
+        detail:
+          eventName:
+            - AssumeRole
+            - GetParameter
+            - GetParametersByPath
+          $or:
+            - requestParameters:
+                roleName:
+                  - infra-config-readonly-role
+            - requestParameters:
+                name:
+                  - prefix: "/prod/database/"
+                  - prefix: "/prod/ci-cd/"
+                  - prefix: "/prod/monitoring/"
+                  - prefix: "/prod/vpn/"
+                  - prefix: "/prod/kubernetes/"
+      Targets:
+        - Id: DeceptionLambda
+          Arn: !Ref LambdaArn
+          RoleArn: !Ref InvokeLambdaRoleArn
+
+  # ===========================================================================
+  # SCENARIO 4 — S3 SSH Key to EC2 Bastion
+  # ===========================================================================
+  DetectionRuleScenario04:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: deception-detect-scenario-04
+      Description: "S3 SSH Key to EC2 Bastion - AssumeRole + GetObject + StartInstances"
+      EventBusName: deception-global-event-bus
+      State: ENABLED
+      EventPattern:
+        source:
+          - aws.sts
+          - aws.s3
+          - aws.ec2
+        detail-type:
+          - AWS API Call via CloudTrail
+        detail:
+          eventName:
+            - AssumeRole
+            - GetObject
+            - StartInstances
+            - AuthorizeSecurityGroupIngress
+          $or:
+            - requestParameters:
+                roleName:
+                  - devops-s3-deploy-role
+            - requestParameters:
+                bucketName:
+                  - prefix: devops-deploy-keys-
+      Targets:
+        - Id: DeceptionLambda
+          Arn: !Ref LambdaArn
+          RoleArn: !Ref InvokeLambdaRoleArn
+
+  # ===========================================================================
+  # SCENARIO 5 — ECR Container Image with PII
+  # ===========================================================================
+  DetectionRuleScenario05:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: deception-detect-scenario-05
+      Description: "ECR Container Image with PII - BatchGetImage + GetDownloadUrlForLayer"
+      EventBusName: deception-global-event-bus
+      State: ENABLED
+      EventPattern:
+        source:
+          - aws.ecr
+        detail-type:
+          - AWS API Call via CloudTrail
+        detail:
+          eventName:
+            - BatchGetImage
+            - GetDownloadUrlForLayer
+          requestParameters:
+            repositoryName:
+              - prod-payment-service
+      Targets:
+        - Id: DeceptionLambda
+          Arn: !Ref LambdaArn
+          RoleArn: !Ref InvokeLambdaRoleArn
+
+  # ===========================================================================
+  # SCENARIO 6 — Lambda Data Sync with Env Var Secrets
+  # ===========================================================================
+  DetectionRuleScenario06:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: deception-detect-scenario-06
+      Description: "Lambda Data Sync Env Var Secrets - AssumeRole + GetFunctionConfig"
+      EventBusName: deception-global-event-bus
+      State: ENABLED
+      EventPattern:
+        source:
+          - aws.sts
+          - aws.lambda
+          - aws.s3
+          - aws.secretsmanager
+          - aws.ssm
+        detail-type:
+          - AWS API Call via CloudTrail
+        detail:
+          eventName:
+            - AssumeRole
+            - GetFunctionConfiguration20150331v2
+            - GetObject
+            - GetSecretValue
+            - GetParameter
+          $or:
+            - requestParameters:
+                roleName:
+                  - lambda-ops-readonly-role
+            - requestParameters:
+                functionName:
+                  - prod-data-sync-processor
+            - requestParameters:
+                bucketName:
+                  - prefix: prod-data-sync-artifacts-
+            - requestParameters:
+                secretId:
+                  - prefix: "prod/data-sync/"
+            - requestParameters:
+                name:
+                  - prefix: "/prod/data-sync/"
+      Targets:
+        - Id: DeceptionLambda
+          Arn: !Ref LambdaArn
+          RoleArn: !Ref InvokeLambdaRoleArn
+
+  # ===========================================================================
+  # SCENARIO 7 — Lambda Role Chaining to Compliance Lures
+  # ===========================================================================
+  DetectionRuleScenario07:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: deception-detect-scenario-07
+      Description: "Lambda Role Chaining Compliance - AssumeRole + GetFunctionConfig"
+      EventBusName: deception-global-event-bus
+      State: ENABLED
+      EventPattern:
+        source:
+          - aws.sts
+          - aws.lambda
+          - aws.s3
+          - aws.secretsmanager
+          - aws.ssm
+        detail-type:
+          - AWS API Call via CloudTrail
+        detail:
+          eventName:
+            - AssumeRole
+            - GetFunctionConfiguration20150331v2
+            - GetObject
+            - GetSecretValue
+            - GetParameter
+          $or:
+            - requestParameters:
+                roleName:
+                  - compliance-audit-readonly-role
+                  - prod-compliance-data-access-role
+            - requestParameters:
+                functionName:
+                  - prod-compliance-report-generator
+            - requestParameters:
+                bucketName:
+                  - prefix: compliance-audit-reports-
+            - requestParameters:
+                secretId:
+                  - prefix: "prod/compliance/"
+            - requestParameters:
+                name:
+                  - prefix: "/prod/compliance/"
+      Targets:
+        - Id: DeceptionLambda
+          Arn: !Ref LambdaArn
+          RoleArn: !Ref InvokeLambdaRoleArn
+
+  # ===========================================================================
+  # SCENARIO 8 — IAM Role Chain Loop
+  # ===========================================================================
+  DetectionRuleScenario08:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: deception-detect-scenario-08
+      Description: "IAM Role Chain Loop - AssumeRole on circular roles + GetParameter"
+      EventBusName: deception-global-event-bus
+      State: ENABLED
+      EventPattern:
+        source:
+          - aws.sts
+          - aws.ssm
+        detail-type:
+          - AWS API Call via CloudTrail
+        detail:
+          eventName:
+            - AssumeRole
+            - GetParameter
+          $or:
+            - requestParameters:
+                roleName:
+                  - prod-microservice-auth-role
+                  - prod-microservice-data-role
+                  - prod-microservice-admin-role
+            - requestParameters:
+                name:
+                  - prefix: "/prod/auth/"
+                  - prefix: "/prod/data/"
+                  - prefix: "/prod/admin/"
+      Targets:
+        - Id: DeceptionLambda
+          Arn: !Ref LambdaArn
+          RoleArn: !Ref InvokeLambdaRoleArn
+
+  # ===========================================================================
+  # SCENARIO 9 — DynamoDB Customer Profiles
+  # ===========================================================================
+  DetectionRuleScenario09:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: deception-detect-scenario-09
+      Description: "DynamoDB Customer Profiles - AssumeRole + Scan/Query/GetItem"
+      EventBusName: deception-global-event-bus
+      State: ENABLED
+      EventPattern:
+        source:
+          - aws.sts
+          - aws.dynamodb
+        detail-type:
+          - AWS API Call via CloudTrail
+        detail:
+          eventName:
+            - AssumeRole
+            - DescribeTable
+            - Scan
+            - Query
+            - GetItem
+          $or:
+            - requestParameters:
+                roleName:
+                  - customer-data-readonly-role
+            - requestParameters:
+                tableName:
+                  - prod-customer-profiles
+      Targets:
+        - Id: DeceptionLambda
+          Arn: !Ref LambdaArn
+          RoleArn: !Ref InvokeLambdaRoleArn
+
+  # ===========================================================================
+  # SCENARIO 10 — DynamoDB Active Sessions
+  # ===========================================================================
+  DetectionRuleScenario10:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: deception-detect-scenario-10
+      Description: "DynamoDB Active Sessions - AssumeRole + Scan/Query"
+      EventBusName: deception-global-event-bus
+      State: ENABLED
+      EventPattern:
+        source:
+          - aws.sts
+          - aws.dynamodb
+        detail-type:
+          - AWS API Call via CloudTrail
+        detail:
+          eventName:
+            - AssumeRole
+            - DescribeTable
+            - Scan
+            - Query
+          $or:
+            - requestParameters:
+                roleName:
+                  - session-store-readonly-role
+            - requestParameters:
+                tableName:
+                  - prod-active-sessions
+      Targets:
+        - Id: DeceptionLambda
+          Arn: !Ref LambdaArn
+          RoleArn: !Ref InvokeLambdaRoleArn
+
+  # ===========================================================================
+  # SCENARIO 11 — SQS Payment Events DLQ
+  # ===========================================================================
+  DetectionRuleScenario11:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: deception-detect-scenario-11
+      Description: "SQS Payment Events DLQ - AssumeRole + GetQueueAttributes + ReceiveMessage"
+      EventBusName: deception-global-event-bus
+      State: ENABLED
+      EventPattern:
+        source:
+          - aws.sts
+          - aws.sqs
+        detail-type:
+          - AWS API Call via CloudTrail
+        detail:
+          eventName:
+            - AssumeRole
+            - GetQueueAttributes
+            - ReceiveMessage
+          $or:
+            - requestParameters:
+                roleName:
+                  - payment-queue-readonly-role
+            - requestParameters:
+                queueUrl:
+                  - suffix: "/prod-payment-events.fifo"
+                  - suffix: "/prod-payment-events-dlq.fifo"
+      Targets:
+        - Id: DeceptionLambda
+          Arn: !Ref LambdaArn
+          RoleArn: !Ref InvokeLambdaRoleArn
+
+  # ===========================================================================
+  # SCENARIO 12 — SNS Critical Alerts Topic
+  # ===========================================================================
+  DetectionRuleScenario12:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: deception-detect-scenario-12
+      Description: "SNS Critical Alerts Topic - AssumeRole + GetTopicAttributes + Publish"
+      EventBusName: deception-global-event-bus
+      State: ENABLED
+      EventPattern:
+        source:
+          - aws.sts
+          - aws.sns
+        detail-type:
+          - AWS API Call via CloudTrail
+        detail:
+          eventName:
+            - AssumeRole
+            - GetTopicAttributes
+            - ListSubscriptionsByTopic
+            - Publish
+          $or:
+            - requestParameters:
+                roleName:
+                  - alerts-readonly-role
+            - requestParameters:
+                topicArn:
+                  - suffix: ":prod-alerts-critical"
+      Targets:
+        - Id: DeceptionLambda
+          Arn: !Ref LambdaArn
+          RoleArn: !Ref InvokeLambdaRoleArn
+
+  # ===========================================================================
+  # SCENARIO 13 — CloudWatch Logs Leaked Credentials
+  # ===========================================================================
+  DetectionRuleScenario13:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: deception-detect-scenario-13
+      Description: "CloudWatch Logs Leaked Credentials - AssumeRole + GetLogEvents"
+      EventBusName: deception-global-event-bus
+      State: ENABLED
+      EventPattern:
+        source:
+          - aws.sts
+          - aws.logs
+        detail-type:
+          - AWS API Call via CloudTrail
+        detail:
+          eventName:
+            - AssumeRole
+            - GetLogEvents
+            - FilterLogEvents
+          $or:
+            - requestParameters:
+                roleName:
+                  - log-analysis-readonly-role
+            - requestParameters:
+                logGroupName:
+                  - "/prod/payment-service/application"
+      Targets:
+        - Id: DeceptionLambda
+          Arn: !Ref LambdaArn
+          RoleArn: !Ref InvokeLambdaRoleArn
+
+  # ===========================================================================
+  # SCENARIO 14 — KMS Customer Data Encryption Key
+  # ===========================================================================
+  DetectionRuleScenario14:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: deception-detect-scenario-14
+      Description: "KMS Customer Data Encryption Key - AssumeRole + DescribeKey + Decrypt"
+      EventBusName: deception-global-event-bus
+      State: ENABLED
+      EventPattern:
+        source:
+          - aws.sts
+          - aws.kms
+        detail-type:
+          - AWS API Call via CloudTrail
+        detail:
+          eventName:
+            - AssumeRole
+            - DescribeKey
+            - Decrypt
+          $or:
+            - requestParameters:
+                roleName:
+                  - kms-audit-readonly-role
+            - requestParameters:
+                keyId:
+                  - prefix: "alias/prod-customer-data-encryption"
+      Targets:
+        - Id: DeceptionLambda
+          Arn: !Ref LambdaArn
+          RoleArn: !Ref InvokeLambdaRoleArn
+
+  # ===========================================================================
+  # SCENARIO 15 — SAML Provider Fake Okta SSO
+  # ===========================================================================
+  DetectionRuleScenario15:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: deception-detect-scenario-15
+      Description: "SAML Provider Fake Okta SSO - AssumeRole + AssumeRoleWithSAML"
+      EventBusName: deception-global-event-bus
+      State: ENABLED
+      EventPattern:
+        source:
+          - aws.sts
+          - aws.iam
+        detail-type:
+          - AWS API Call via CloudTrail
+        detail:
+          eventName:
+            - AssumeRole
+            - AssumeRoleWithSAML
+            - GetSAMLProvider
+          $or:
+            - requestParameters:
+                roleName:
+                  - sso-audit-readonly-role
+                  - prod-okta-admin-role
+                  - prod-okta-developer-role
+            - requestParameters:
+                sAMLProviderArn:
+                  - suffix: ":saml-provider/ProdOktaSSO"
+      Targets:
+        - Id: DeceptionLambda
+          Arn: !Ref LambdaArn
+          RoleArn: !Ref InvokeLambdaRoleArn
+
+  # ===========================================================================
+  # SCENARIO 16 — Resource Tags Breadcrumb Trail
+  # ===========================================================================
+  DetectionRuleScenario16:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: deception-detect-scenario-16
+      Description: "Resource Tags Breadcrumb Trail - AssumeRole on inventory role"
+      EventBusName: deception-global-event-bus
+      State: ENABLED
+      EventPattern:
+        source:
+          - aws.sts
+        detail-type:
+          - AWS API Call via CloudTrail
+        detail:
+          eventName:
+            - AssumeRole
+          requestParameters:
+            roleName:
+              - resource-inventory-readonly-role
+      Targets:
+        - Id: DeceptionLambda
+          Arn: !Ref LambdaArn
+          RoleArn: !Ref InvokeLambdaRoleArn
+
+  # ===========================================================================
+  # SCENARIO 17 — Lambda + DynamoDB Enriched User PII
+  # ===========================================================================
+  DetectionRuleScenario17:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: deception-detect-scenario-17
+      Description: "Lambda + DynamoDB Enriched User PII - AssumeRole + GetFunctionConfig + Scan"
+      EventBusName: deception-global-event-bus
+      State: ENABLED
+      EventPattern:
+        source:
+          - aws.sts
+          - aws.lambda
+          - aws.dynamodb
+        detail-type:
+          - AWS API Call via CloudTrail
+        detail:
+          eventName:
+            - AssumeRole
+            - GetFunctionConfiguration20150331v2
+            - DescribeTable
+            - Scan
+          $or:
+            - requestParameters:
+                roleName:
+                  - etl-ops-readonly-role
+            - requestParameters:
+                functionName:
+                  - prod-user-data-enrichment
+            - requestParameters:
+                tableName:
+                  - prod-enriched-user-profiles
+      Targets:
+        - Id: DeceptionLambda
+          Arn: !Ref LambdaArn
+          RoleArn: !Ref InvokeLambdaRoleArn
+
+  # ===========================================================================
+  # SCENARIO 18 — SSM Parameter Cross-Reference Chain
+  # ===========================================================================
+  DetectionRuleScenario18:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: deception-detect-scenario-18
+      Description: "SSM Parameter Cross-Reference Chain - AssumeRole + GetParameter"
+      EventBusName: deception-global-event-bus
+      State: ENABLED
+      EventPattern:
+        source:
+          - aws.sts
+          - aws.ssm
+        detail-type:
+          - AWS API Call via CloudTrail
+        detail:
+          eventName:
+            - AssumeRole
+            - GetParameter
+            - GetParametersByPath
+          $or:
+            - requestParameters:
+                roleName:
+                  - infra-params-readonly-role
+            - requestParameters:
+                name:
+                  - prefix: "/prod/db/"
+      Targets:
+        - Id: DeceptionLambda
+          Arn: !Ref LambdaArn
+          RoleArn: !Ref InvokeLambdaRoleArn
+
+  # ===========================================================================
+  # SCENARIO 19 — CloudFormation Stack Outputs Exposed Secrets
+  # ===========================================================================
+  DetectionRuleScenario19:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: deception-detect-scenario-19
+      Description: "CloudFormation Stack Outputs Secrets - AssumeRole + DescribeStacks"
+      EventBusName: deception-global-event-bus
+      State: ENABLED
+      EventPattern:
+        source:
+          - aws.sts
+          - aws.cloudformation
+        detail-type:
+          - AWS API Call via CloudTrail
+        detail:
+          eventName:
+            - AssumeRole
+            - DescribeStacks
+          $or:
+            - requestParameters:
+                roleName:
+                  - cfn-audit-readonly-role
+            - requestParameters:
+                stackName:
+                  - prefix: prod-core-infrastructure
+      Targets:
+        - Id: DeceptionLambda
+          Arn: !Ref LambdaArn
+          RoleArn: !Ref InvokeLambdaRoleArn

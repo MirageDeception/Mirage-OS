@@ -1,0 +1,40 @@
+{
+  "name": "deception-scenario-07",
+  "description": "Lambda Role Chaining — AssumeRole (2 roles) + GetFunctionConfiguration + GetObject + GetSecretValue + GetParameter",
+  "scenario_number": 7,
+  "scenario_name": "Lambda Role Chaining to Compliance Lures",
+  "event_pattern": {
+    "source": ["aws.sts", "aws.lambda", "aws.s3", "aws.secretsmanager", "aws.ssm"],
+    "detail-type": ["AWS API Call via CloudTrail"],
+    "detail": {
+      "eventName": ["AssumeRole", "GetFunctionConfiguration20150331v2", "GetObject", "GetSecretValue", "GetParameter"],
+      "$or": [
+        {
+          "requestParameters": {
+            "roleName": ["compliance-audit-readonly-role", "prod-compliance-data-access-role"]
+          }
+        },
+        {
+          "requestParameters": {
+            "functionName": ["prod-compliance-report-generator"]
+          }
+        },
+        {
+          "requestParameters": {
+            "bucketName": [{"prefix": "compliance-audit-reports-"}]
+          }
+        },
+        {
+          "requestParameters": {
+            "secretId": [{"prefix": "prod/compliance/"}]
+          }
+        },
+        {
+          "requestParameters": {
+            "name": [{"prefix": "/prod/compliance/"}]
+          }
+        }
+      ]
+    }
+  }
+}

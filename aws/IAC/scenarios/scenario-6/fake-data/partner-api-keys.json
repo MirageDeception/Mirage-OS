@@ -1,0 +1,15 @@
+{
+  "salesforce": {
+    "client_id": "3MVG9d8..zR5.Bh7kLmNoPqRsTuVwXyZ",
+    "client_secret": "A1B2C3D4E5F6A7B8C9D0E1F2A3B4C5D6",
+    "refresh_token": "5Aep861..kLmNoPqRsTuVwXyZaBcDeFgHiJk",
+    "instance_url": "https://acme-corp.my.salesforce.com"
+  },
+  "hubspot": {
+    "api_key": "pat-na1-a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "portal_id": "12345678"
+  },
+  "segment": {
+    "write_key": "wk_prod_a1B2c3D4e5F6g7H8i9J0kLmN"
+  }
+}

@@ -1,0 +1,243 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Cloud Deception — Dev Account Forwarding (2-Rule Consolidated).
+  Deployed in each account where deception decoys exist.
+  Rule 1: Forwards STS AssumeRole on all lure role ARNs.
+  Rule 2: Forwards all other service events touching decoy resources.
+  Both rules target the central event bus in CSC Prod.
+
+Parameters:
+  CentralEventBusArn:
+    Type: String
+    Default: arn:aws:events:us-west-2:913511275171:event-bus/deception-global-event-bus
+    Description: ARN of the central deception event bus in CSC Prod
+
+  DevAccountId:
+    Type: String
+    Default: '046574264211'
+    Description: This dev account ID
+
+Resources:
+
+  # ===========================================================================
+  # IAM ROLE — Single role shared by both forwarding rules
+  # Trust policy scoped to only deception-fwd-* rules in this account
+  # ===========================================================================
+  DeceptionForwardingRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: deception-eventbridge-forwarding-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: TrustEventBridgeDeceptionRules
+            Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref DevAccountId
+              ArnLike:
+                aws:SourceArn: !Sub "arn:aws:events:${AWS::Region}:${DevAccountId}:rule/deception-fwd-*"
+      Policies:
+        - PolicyName: deception-forward-to-central-bus
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: AllowPutEventsToGlobalBus
+                Effect: Allow
+                Action: events:PutEvents
+                Resource: !Ref CentralEventBusArn
+      Tags:
+        - Key: Project
+          Value: deception-monitoring
+        - Key: ManagedBy
+          Value: cloudformation
+
+  # ===========================================================================
+  # RULE 1 — STS AssumeRole on ALL deception lure role ARNs
+  #
+  # CloudTrail logs AssumeRole with requestParameters.roleArn (full ARN),
+  # so we match on roleArn directly. This covers all 19 scenarios' entry point.
+  # ===========================================================================
+  DeceptionFwdSTSRoles:
+    Type: AWS::Events::Rule
+    DependsOn: DeceptionForwardingRole
+    Properties:
+      Name: deception-fwd-sts-lure-roles
+      Description: Forwards AssumeRole/AssumeRoleWithSAML on all deception lure roles
+      State: ENABLED
+      EventPattern:
+        source:
+          - aws.sts
+        detail-type:
+          - AWS API Call via CloudTrail
+        detail:
+          eventName:
+            - AssumeRole
+            - AssumeRoleWithSAML
+          requestParameters:
+            roleArn:
+              # Scenario 1
+              - !Sub "arn:aws:iam::${DevAccountId}:role/infra-s3-data-readonly-role"
+              # Scenario 2
+              - !Sub "arn:aws:iam::${DevAccountId}:role/payment-secrets-readonly-role"
+              # Scenario 3
+              - !Sub "arn:aws:iam::${DevAccountId}:role/infra-config-readonly-role"
+              # Scenario 4
+              - !Sub "arn:aws:iam::${DevAccountId}:role/devops-s3-deploy-role"
+              # Scenario 5 (no role — ECR direct access)
+              # Scenario 6
+              - !Sub "arn:aws:iam::${DevAccountId}:role/lambda-ops-readonly-role"
+              # Scenario 7
+              - !Sub "arn:aws:iam::${DevAccountId}:role/compliance-audit-readonly-role"
+              - !Sub "arn:aws:iam::${DevAccountId}:role/prod-compliance-data-access-role"
+              # Scenario 8
+              - !Sub "arn:aws:iam::${DevAccountId}:role/prod-microservice-auth-role"
+              - !Sub "arn:aws:iam::${DevAccountId}:role/prod-microservice-data-role"
+              - !Sub "arn:aws:iam::${DevAccountId}:role/prod-microservice-admin-role"
+              # Scenario 9
+              - !Sub "arn:aws:iam::${DevAccountId}:role/customer-data-readonly-role"
+              # Scenario 10
+              - !Sub "arn:aws:iam::${DevAccountId}:role/session-store-readonly-role"
+              # Scenario 11
+              - !Sub "arn:aws:iam::${DevAccountId}:role/payment-queue-readonly-role"
+              # Scenario 12
+              - !Sub "arn:aws:iam::${DevAccountId}:role/alerts-readonly-role"
+              # Scenario 13
+              - !Sub "arn:aws:iam::${DevAccountId}:role/log-analysis-readonly-role"
+              # Scenario 14
+              - !Sub "arn:aws:iam::${DevAccountId}:role/kms-audit-readonly-role"
+              # Scenario 15
+              - !Sub "arn:aws:iam::${DevAccountId}:role/sso-audit-readonly-role"
+              - !Sub "arn:aws:iam::${DevAccountId}:role/prod-okta-admin-role"
+              - !Sub "arn:aws:iam::${DevAccountId}:role/prod-okta-developer-role"
+              # Scenario 16
+              - !Sub "arn:aws:iam::${DevAccountId}:role/resource-inventory-readonly-role"
+              # Scenario 17
+              - !Sub "arn:aws:iam::${DevAccountId}:role/etl-ops-readonly-role"
+              # Scenario 18
+              - !Sub "arn:aws:iam::${DevAccountId}:role/infra-params-readonly-role"
+              # Scenario 19
+              - !Sub "arn:aws:iam::${DevAccountId}:role/cfn-audit-readonly-role"
+      Targets:
+        - Id: CentralDeceptionBus
+          Arn: !Ref CentralEventBusArn
+          RoleArn: !GetAtt DeceptionForwardingRole.Arn
+
+  # ===========================================================================
+  # RULE 2 — All other services: S3, SecretsManager, SSM, EC2, ECR, Lambda,
+  #           DynamoDB, SQS, SNS, CloudWatch Logs, KMS, IAM, CloudFormation
+  #
+  # Uses $or inside requestParameters to match any decoy resource name
+  # regardless of which service the event is from.
+  # ===========================================================================
+  DeceptionFwdResourceAccess:
+    Type: AWS::Events::Rule
+    DependsOn: DeceptionForwardingRole
+    Properties:
+      Name: deception-fwd-resource-access
+      Description: Forwards events touching any deception decoy resource
+      State: ENABLED
+      EventPattern:
+        source:
+          - aws.s3
+          - aws.secretsmanager
+          - aws.ssm
+          - aws.ec2
+          - aws.ecr
+          - aws.lambda
+          - aws.dynamodb
+          - aws.sqs
+          - aws.sns
+          - aws.logs
+          - aws.kms
+          - aws.iam
+          - aws.cloudformation
+        detail-type:
+          - AWS API Call via CloudTrail
+        detail:
+          requestParameters:
+            $or:
+              # S3 decoy buckets (Scenarios 1, 4, 6, 7)
+              - bucketName:
+                  - prefix: infra-terraform-state-
+                  - prefix: devops-deploy-keys-
+                  - prefix: prod-data-sync-artifacts-
+                  - prefix: compliance-audit-reports-
+              # Secrets Manager decoy secrets (Scenarios 2, 6, 7)
+              - secretId:
+                  - prefix: "prod/payment-gateway/"
+                  - prefix: "prod/internal-api/service-accounts"
+                  - prefix: "prod/data-sync/"
+                  - prefix: "prod/compliance/"
+              # SSM decoy parameters (Scenarios 3, 6, 7, 8, 18)
+              - name:
+                  - prefix: "/prod/database/"
+                  - prefix: "/prod/ci-cd/"
+                  - prefix: "/prod/monitoring/"
+                  - prefix: "/prod/vpn/"
+                  - prefix: "/prod/kubernetes/"
+                  - prefix: "/prod/data-sync/"
+                  - prefix: "/prod/compliance/"
+                  - prefix: "/prod/auth/"
+                  - prefix: "/prod/data/"
+                  - prefix: "/prod/admin/"
+                  - prefix: "/prod/db/"
+              # ECR decoy repo (Scenario 5)
+              - repositoryName:
+                  - prod-payment-service
+              # Lambda decoy functions (Scenarios 6, 7, 17)
+              - functionName:
+                  - prod-data-sync-processor
+                  - prod-compliance-report-generator
+                  - prod-user-data-enrichment
+              # DynamoDB decoy tables (Scenarios 9, 10, 17)
+              - tableName:
+                  - prod-customer-profiles
+                  - prod-active-sessions
+                  - prod-enriched-user-profiles
+              # SQS decoy queues (Scenario 11)
+              - queueUrl:
+                  - suffix: "/prod-payment-events.fifo"
+                  - suffix: "/prod-payment-events-dlq.fifo"
+              # SNS decoy topic (Scenario 12)
+              - topicArn:
+                  - suffix: ":prod-alerts-critical"
+              # CloudWatch Logs decoy group (Scenario 13)
+              - logGroupName:
+                  - "/prod/payment-service/application"
+              # KMS decoy key (Scenario 14)
+              - keyId:
+                  - prefix: "alias/prod-customer-data-encryption"
+              # IAM SAML decoy provider (Scenario 15)
+              - sAMLProviderArn:
+                  - suffix: ":saml-provider/ProdOktaSSO"
+              # CloudFormation decoy stack (Scenario 19)
+              - stackName:
+                  - prefix: prod-core-infrastructure
+      Targets:
+        - Id: CentralDeceptionBus
+          Arn: !Ref CentralEventBusArn
+          RoleArn: !GetAtt DeceptionForwardingRole.Arn
+
+Outputs:
+
+  ForwardingRoleArn:
+    Description: ARN of the EventBridge forwarding role
+    Value: !GetAtt DeceptionForwardingRole.Arn
+    Export:
+      Name: deception-forwarding-role-arn
+
+  STSRuleArn:
+    Description: ARN of the STS lure roles forwarding rule
+    Value: !GetAtt DeceptionFwdSTSRoles.Arn
+    Export:
+      Name: deception-fwd-sts-rule-arn
+
+  ResourceAccessRuleArn:
+    Description: ARN of the resource access forwarding rule
+    Value: !GetAtt DeceptionFwdResourceAccess.Arn
+    Export:
+      Name: deception-fwd-resource-access-rule-arn

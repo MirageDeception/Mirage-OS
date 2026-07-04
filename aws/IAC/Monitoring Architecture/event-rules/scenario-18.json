@@ -1,0 +1,25 @@
+{
+  "name": "deception-scenario-18",
+  "description": "SSM Parameter Cross-Reference Chain — AssumeRole + GetParameter + GetParametersByPath",
+  "scenario_number": 18,
+  "scenario_name": "SSM Parameter Cross-Reference Chain Lure",
+  "event_pattern": {
+    "source": ["aws.sts", "aws.ssm"],
+    "detail-type": ["AWS API Call via CloudTrail"],
+    "detail": {
+      "eventName": ["AssumeRole", "GetParameter", "GetParametersByPath"],
+      "$or": [
+        {
+          "requestParameters": {
+            "roleName": ["infra-params-readonly-role"]
+          }
+        },
+        {
+          "requestParameters": {
+            "name": [{"prefix": "/prod/db/"}]
+          }
+        }
+      ]
+    }
+  }
+}

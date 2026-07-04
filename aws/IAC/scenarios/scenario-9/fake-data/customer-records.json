@@ -1,0 +1,134 @@
+[
+  {
+    "customer_id": {"S": "CUST-00001"},
+    "email": {"S": "[email protected]"},
+    "full_name": {"S": "Margaret Sullivan"},
+    "phone": {"S": "+1-415-892-3047"},
+    "card_token": {"S": "tok_1NxPr0dC4rdVs8mK2nQ6wR0tY4u"},
+    "account_status": {"S": "active"},
+    "lifetime_value": {"N": "12450.75"},
+    "signup_date": {"S": "2021-03-14"},
+    "last_login": {"S": "2026-04-25T08:32:19Z"}
+  },
+  {
+    "customer_id": {"S": "CUST-00002"},
+    "email": {"S": "[email protected]"},
+    "full_name": {"S": "David Chen"},
+    "phone": {"S": "+1-212-555-0184"},
+    "card_token": {"S": "tok_1QxPr0dC4rdHj7nL3mR8wT2pY6v"},
+    "account_status": {"S": "active"},
+    "lifetime_value": {"N": "8920.30"},
+    "signup_date": {"S": "2022-07-22"},
+    "last_login": {"S": "2026-04-26T14:17:45Z"}
+  },
+  {
+    "customer_id": {"S": "CUST-00003"},
+    "email": {"S": "[email protected]"},
+    "full_name": {"S": "Sarah Mitchell"},
+    "phone": {"S": "+1-503-447-2918"},
+    "card_token": {"S": "tok_1RxPr0dC4rdBk9pM4nS7xU1qZ3w"},
+    "account_status": {"S": "active"},
+    "lifetime_value": {"N": "34210.00"},
+    "signup_date": {"S": "2020-11-05"},
+    "last_login": {"S": "2026-04-24T19:05:33Z"}
+  },
+  {
+    "customer_id": {"S": "CUST-00004"},
+    "email": {"S": "[email protected]"},
+    "full_name": {"S": "James Rodriguez"},
+    "phone": {"S": "+1-305-661-8734"},
+    "card_token": {"S": "tok_1SxPr0dC4rdCl2qN5oT8yV4rA6x"},
+    "account_status": {"S": "suspended"},
+    "lifetime_value": {"N": "1580.50"},
+    "signup_date": {"S": "2023-01-18"},
+    "last_login": {"S": "2026-02-10T11:42:08Z"}
+  },
+  {
+    "customer_id": {"S": "CUST-00005"},
+    "email": {"S": "[email protected]"},
+    "full_name": {"S": "Emily Nakamura"},
+    "phone": {"S": "+1-206-339-5621"},
+    "card_token": {"S": "tok_1TxPr0dC4rdDm3rO6pU9zW5sB7y"},
+    "account_status": {"S": "active"},
+    "lifetime_value": {"N": "22780.90"},
+    "signup_date": {"S": "2021-09-30"},
+    "last_login": {"S": "2026-04-27T06:15:22Z"}
+  },
+  {
+    "customer_id": {"S": "CUST-00006"},
+    "email": {"S": "[email protected]"},
+    "full_name": {"S": "Robert Andersen"},
+    "phone": {"S": "+1-312-774-0293"},
+    "card_token": {"S": "tok_1UxPr0dC4rdEn4sP7qV0aX6tC8z"},
+    "account_status": {"S": "active"},
+    "lifetime_value": {"N": "5640.25"},
+    "signup_date": {"S": "2022-04-11"},
+    "last_login": {"S": "2026-04-23T22:38:51Z"}
+  },
+  {
+    "customer_id": {"S": "CUST-00007"},
+    "email": {"S": "[email protected]"},
+    "full_name": {"S": "Lisa Patel"},
+    "phone": {"S": "+1-408-882-1467"},
+    "card_token": {"S": "tok_1VxPr0dC4rdFo5tQ8rW1bY7uD9a"},
+    "account_status": {"S": "active"},
+    "lifetime_value": {"N": "41320.60"},
+    "signup_date": {"S": "2020-06-19"},
+    "last_login": {"S": "2026-04-26T17:29:14Z"}
+  },
+  {
+    "customer_id": {"S": "CUST-00008"},
+    "email": {"S": "[email protected]"},
+    "full_name": {"S": "Michael O'Brien"},
+    "phone": {"S": "+1-617-225-8390"},
+    "card_token": {"S": "tok_1WxPr0dC4rdGp6uR9sX2cZ8vE0b"},
+    "account_status": {"S": "active"},
+    "lifetime_value": {"N": "17890.40"},
+    "signup_date": {"S": "2021-12-03"},
+    "last_login": {"S": "2026-04-25T13:54:07Z"}
+  },
+  {
+    "customer_id": {"S": "CUST-00009"},
+    "email": {"S": "[email protected]"},
+    "full_name": {"S": "Jennifer Kim"},
+    "phone": {"S": "+1-213-998-4752"},
+    "card_token": {"S": "tok_1XxPr0dC4rdHq7vS0tY3dA9wF1c"},
+    "account_status": {"S": "suspended"},
+    "lifetime_value": {"N": "3210.15"},
+    "signup_date": {"S": "2023-08-27"},
+    "last_login": {"S": "2026-03-18T09:21:36Z"}
+  },
+  {
+    "customer_id": {"S": "CUST-00010"},
+    "email": {"S": "[email protected]"},
+    "full_name": {"S": "Thomas Weber"},
+    "phone": {"S": "+1-720-443-6108"},
+    "card_token": {"S": "tok_1YxPr0dC4rdIr8wT1uZ4eB0xG2d"},
+    "account_status": {"S": "active"},
+    "lifetime_value": {"N": "28950.80"},
+    "signup_date": {"S": "2021-05-16"},
+    "last_login": {"S": "2026-04-27T02:47:59Z"}
+  },
+  {
+    "customer_id": {"S": "CUST-00011"},
+    "email": {"S": "[email protected]"},
+    "full_name": {"S": "Amanda Foster"},
+    "phone": {"S": "+1-469-557-3284"},
+    "card_token": {"S": "tok_1ZxPr0dC4rdJs9xU2vA5fC1yH3e"},
+    "account_status": {"S": "active"},
+    "lifetime_value": {"N": "9870.55"},
+    "signup_date": {"S": "2022-10-08"},
+    "last_login": {"S": "2026-04-24T16:03:42Z"}
+  },
+  {
+    "customer_id": {"S": "CUST-00012"},
+    "email": {"S": "[email protected]"},
+    "full_name": {"S": "Christopher Nguyen"},
+    "phone": {"S": "+1-510-221-7945"},
+    "card_token": {"S": "tok_2AxPr0dC4rdKt0yV3wB6gD2zI4f"},
+    "account_status": {"S": "active"},
+    "lifetime_value": {"N": "56430.20"},
+    "signup_date": {"S": "2019-08-14"},
+    "last_login": {"S": "2026-04-26T20:11:28Z"}
+  }
+]

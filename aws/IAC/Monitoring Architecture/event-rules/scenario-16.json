@@ -1,0 +1,16 @@
+{
+  "name": "deception-scenario-16",
+  "description": "Resource Tags Breadcrumb Trail — AssumeRole only (role assumption is the primary signal)",
+  "scenario_number": 16,
+  "scenario_name": "Resource Tags Breadcrumb Trail Lure",
+  "event_pattern": {
+    "source": ["aws.sts"],
+    "detail-type": ["AWS API Call via CloudTrail"],
+    "detail": {
+      "eventName": ["AssumeRole"],
+      "requestParameters": {
+        "roleName": ["resource-inventory-readonly-role"]
+      }
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "name": "deception-scenario-04",
+  "description": "S3 SSH Key to EC2 Bastion — AssumeRole + GetObject + StartInstances + AuthorizeSecurityGroupIngress",
+  "scenario_number": 4,
+  "scenario_name": "S3 SSH Key to EC2 Bastion Lure",
+  "event_pattern": {
+    "source": ["aws.sts", "aws.s3", "aws.ec2"],
+    "detail-type": ["AWS API Call via CloudTrail"],
+    "detail": {
+      "eventName": ["AssumeRole", "GetObject", "StartInstances", "AuthorizeSecurityGroupIngress"],
+      "$or": [
+        {
+          "requestParameters": {
+            "roleName": ["devops-s3-deploy-role"]
+          }
+        },
+        {
+          "requestParameters": {
+            "bucketName": [{"prefix": "devops-deploy-keys-"}]
+          }
+        }
+      ]
+    }
+  }
+}

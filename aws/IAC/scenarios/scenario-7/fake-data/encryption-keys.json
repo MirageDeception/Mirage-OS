@@ -1,0 +1,7 @@
+{
+  "data_encryption_key": "aes256:e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6",
+  "kms_key_arn": "arn:aws:kms:us-west-2:471938592305:key/mrk-a1b2c3d4e5f6a7b8c9d0e1f2",
+  "backup_encryption_key": "aes256:1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b",
+  "token_vault_master_key": "tv_mk_prod_xK9mP2vL5nQ8wR1tY4uJ7hG3fD6sA0",
+  "certificate_private_key_passphrase": "c3rt_pk_p@ss_pr0d_2024"
+}

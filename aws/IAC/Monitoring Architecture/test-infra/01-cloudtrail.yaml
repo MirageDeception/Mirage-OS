@@ -1,0 +1,205 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  CFT 1 - CloudTrail with ALL logging enabled (management + data events).
+  Creates a trail that logs both management events (read + write) and data events
+  for S3, DynamoDB, SQS, Lambda, Secrets Manager, SNS, CloudWatch Logs, and KMS.
+  This ensures ALL deception-related API calls are captured and delivered to EventBridge.
+
+Parameters:
+  TrailName:
+    Type: String
+    Default: deception-test-trail
+    Description: Name of the CloudTrail trail
+
+Resources:
+
+  # ---------------------------------------------------------------
+  # S3 Bucket for CloudTrail log delivery
+  # CloudTrail requires an S3 bucket to store log files
+  # ---------------------------------------------------------------
+  TrailBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'cloudtrail-deception-logs-${AWS::AccountId}'
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+            BucketKeyEnabled: true
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: ExpireOldLogs
+            Status: Enabled
+            ExpirationInDays: 90
+      Tags:
+        - Key: Purpose
+          Value: deception-cloudtrail-testing
+        - Key: ManagedBy
+          Value: cloudformation
+
+  # ---------------------------------------------------------------
+  # S3 Bucket Policy - Required for CloudTrail to write logs
+  # CloudTrail checks this policy before delivering logs
+  # ---------------------------------------------------------------
+  TrailBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref TrailBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AWSCloudTrailAclCheck
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: 's3:GetBucketAcl'
+            Resource: !GetAtt TrailBucket.Arn
+            Condition:
+              StringEquals:
+                'aws:SourceArn': !Sub 'arn:aws:cloudtrail:${AWS::Region}:${AWS::AccountId}:trail/${TrailName}'
+          - Sid: AWSCloudTrailWrite
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: 's3:PutObject'
+            Resource: !Sub '${TrailBucket.Arn}/AWSLogs/${AWS::AccountId}/*'
+            Condition:
+              StringEquals:
+                's3:x-amz-acl': 'bucket-owner-full-control'
+                'aws:SourceArn': !Sub 'arn:aws:cloudtrail:${AWS::Region}:${AWS::AccountId}:trail/${TrailName}'
+
+  # ---------------------------------------------------------------
+  # CloudTrail Trail - Logs EVERYTHING
+  # - Management events: Read + Write (all control plane calls)
+  # - Data events: Scoped to deception resource types
+  #
+  # Uses Advanced Event Selectors which allow:
+  # - Logging management events AND data events on the same trail
+  # - Filtering data events by resource type and ARN
+  # - Filtering by eventName for fine-grained control
+  #
+  # Once events are logged by this trail, they are delivered to
+  # the default EventBridge bus in this account.
+  # ---------------------------------------------------------------
+  DeceptionTrail:
+    Type: AWS::CloudTrail::Trail
+    DependsOn: TrailBucketPolicy
+    Properties:
+      TrailName: !Ref TrailName
+      S3BucketName: !Ref TrailBucket
+      IsLogging: true
+      IsMultiRegionTrail: false
+      EnableLogFileValidation: true
+      IncludeGlobalServiceEvents: true
+      # Advanced Event Selectors replace basic event selectors
+      # They allow combining management + data events on one trail
+      AdvancedEventSelectors:
+        # Selector 1: ALL management events (read + write)
+        # This captures: AssumeRole, GetSecretValue, DescribeKey,
+        # GetParameter, DescribeStacks, GetFunctionConfiguration,
+        # StartInstances, AuthorizeSecurityGroupIngress, etc.
+        - Name: AllManagementEvents
+          FieldSelectors:
+            - Field: eventCategory
+              Equals:
+                - Management
+
+        # Selector 2: S3 data events for deception buckets
+        # Captures: GetObject on decoy S3 buckets
+        - Name: DeceptionS3DataEvents
+          FieldSelectors:
+            - Field: eventCategory
+              Equals:
+                - Data
+            - Field: resources.type
+              Equals:
+                - AWS::S3::Object
+            - Field: resources.ARN
+              StartsWith:
+                - !Sub 'arn:aws:s3:::infra-terraform-state-${AWS::AccountId}/'
+                - !Sub 'arn:aws:s3:::devops-deploy-keys-${AWS::AccountId}/'
+                - !Sub 'arn:aws:s3:::compliance-audit-reports-${AWS::AccountId}/'
+                - !Sub 'arn:aws:s3:::prod-data-sync-artifacts-${AWS::AccountId}/'
+
+        # Selector 3: DynamoDB data events for deception tables
+        # Captures: Scan, Query, GetItem, PutItem on decoy tables
+        - Name: DeceptionDynamoDBDataEvents
+          FieldSelectors:
+            - Field: eventCategory
+              Equals:
+                - Data
+            - Field: resources.type
+              Equals:
+                - AWS::DynamoDB::Table
+            - Field: resources.ARN
+              EndsWith:
+                - /prod-customer-profiles
+                - /prod-active-sessions
+                - /prod-enriched-user-profiles
+
+        # Selector 4: SQS data events for deception queues
+        # Captures: ReceiveMessage, SendMessage on decoy queues
+        - Name: DeceptionSQSDataEvents
+          FieldSelectors:
+            - Field: eventCategory
+              Equals:
+                - Data
+            - Field: resources.type
+              Equals:
+                - AWS::SQS::Queue
+            - Field: resources.ARN
+              EndsWith:
+                - /prod-payment-events.fifo
+                - /prod-payment-events-dlq.fifo
+
+        # Selector 5: CloudWatch Logs data events for deception log group
+        # Captures: GetLogEvents, FilterLogEvents on decoy log group
+        - Name: DeceptionCloudWatchLogsDataEvents
+          FieldSelectors:
+            - Field: eventCategory
+              Equals:
+                - Data
+            - Field: resources.type
+              Equals:
+                - AWS::Logs::LogGroup
+            - Field: resources.ARN
+              EndsWith:
+                - ':log-group:/prod/payment-service/application'
+
+        # Selector 6: SNS data events for deception topic
+        # Captures: Publish on decoy SNS topic
+        - Name: DeceptionSNSDataEvents
+          FieldSelectors:
+            - Field: eventCategory
+              Equals:
+                - Data
+            - Field: resources.type
+              Equals:
+                - AWS::SNS::Topic
+            - Field: resources.ARN
+              EndsWith:
+                - ':prod-alerts-critical'
+
+      Tags:
+        - Key: Purpose
+          Value: deception-monitoring-test
+        - Key: ManagedBy
+          Value: cloudformation
+
+Outputs:
+  TrailArn:
+    Description: ARN of the CloudTrail trail
+    Value: !GetAtt DeceptionTrail.Arn
+  TrailBucketName:
+    Description: S3 bucket storing CloudTrail logs
+    Value: !Ref TrailBucket
+  TrailName:
+    Description: Name of the trail
+    Value: !Ref TrailName

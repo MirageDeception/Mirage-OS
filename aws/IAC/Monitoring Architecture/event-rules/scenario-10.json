@@ -1,0 +1,25 @@
+{
+  "name": "deception-scenario-10",
+  "description": "DynamoDB Active Sessions — AssumeRole + DescribeTable + Scan + Query",
+  "scenario_number": 10,
+  "scenario_name": "DynamoDB Active Sessions Lure",
+  "event_pattern": {
+    "source": ["aws.sts", "aws.dynamodb"],
+    "detail-type": ["AWS API Call via CloudTrail"],
+    "detail": {
+      "eventName": ["AssumeRole", "DescribeTable", "Scan", "Query"],
+      "$or": [
+        {
+          "requestParameters": {
+            "roleName": ["session-store-readonly-role"]
+          }
+        },
+        {
+          "requestParameters": {
+            "tableName": ["prod-active-sessions"]
+          }
+        }
+      ]
+    }
+  }
+}

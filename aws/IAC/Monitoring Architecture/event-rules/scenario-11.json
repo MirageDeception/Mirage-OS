@@ -1,0 +1,28 @@
+{
+  "name": "deception-scenario-11",
+  "description": "SQS Payment Events DLQ — AssumeRole + GetQueueAttributes + ReceiveMessage",
+  "scenario_number": 11,
+  "scenario_name": "SQS Payment Events Dead Letter Queue Lure",
+  "event_pattern": {
+    "source": ["aws.sts", "aws.sqs"],
+    "detail-type": ["AWS API Call via CloudTrail"],
+    "detail": {
+      "eventName": ["AssumeRole", "GetQueueAttributes", "ReceiveMessage"],
+      "$or": [
+        {
+          "requestParameters": {
+            "roleName": ["payment-queue-readonly-role"]
+          }
+        },
+        {
+          "requestParameters": {
+            "queueUrl": [
+              {"suffix": "/prod-payment-events.fifo"},
+              {"suffix": "/prod-payment-events-dlq.fifo"}
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

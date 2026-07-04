@@ -1,0 +1,6 @@
+customer_id,full_name,email,phone,ssn_last4,account_status,lifetime_value
+CUST-00001,Margaret Sullivan,m.sullivan@acme-corp.com,+1-425-555-0147,4821,active,12450.00
+CUST-00002,David Chen,d.chen@globex-inc.com,+1-206-555-0293,7293,active,8920.50
+CUST-00003,Sarah Nakamura,s.nakamura@initech.io,+1-503-555-0184,1547,suspended,3200.00
+CUST-00004,Robert Andersen,r.andersen@umbrella-corp.net,+1-312-555-0362,6038,active,45100.75
+CUST-00005,Lisa Patel,l.patel@soylent-systems.com,+1-415-555-0519,9412,active,22340.00

@@ -1,0 +1,31 @@
+{
+  "name": "deception-scenario-03",
+  "description": "SSM Parameter Store Infrastructure Vault — AssumeRole + GetParameter/GetParametersByPath on decoy params",
+  "scenario_number": 3,
+  "scenario_name": "SSM Parameter Store Infrastructure Vault",
+  "event_pattern": {
+    "source": ["aws.sts", "aws.ssm"],
+    "detail-type": ["AWS API Call via CloudTrail"],
+    "detail": {
+      "eventName": ["AssumeRole", "GetParameter", "GetParametersByPath"],
+      "$or": [
+        {
+          "requestParameters": {
+            "roleName": ["infra-config-readonly-role"]
+          }
+        },
+        {
+          "requestParameters": {
+            "name": [
+              {"prefix": "/prod/database/"},
+              {"prefix": "/prod/ci-cd/"},
+              {"prefix": "/prod/monitoring/"},
+              {"prefix": "/prod/vpn/"},
+              {"prefix": "/prod/kubernetes/"}
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

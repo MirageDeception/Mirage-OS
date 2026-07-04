@@ -1,0 +1,25 @@
+{
+  "name": "deception-scenario-15",
+  "description": "SAML Provider Fake Okta SSO — AssumeRole + GetSAMLProvider + AssumeRoleWithSAML",
+  "scenario_number": 15,
+  "scenario_name": "SAML Provider Fake Okta SSO Lure",
+  "event_pattern": {
+    "source": ["aws.sts", "aws.iam"],
+    "detail-type": ["AWS API Call via CloudTrail"],
+    "detail": {
+      "eventName": ["AssumeRole", "AssumeRoleWithSAML", "GetSAMLProvider"],
+      "$or": [
+        {
+          "requestParameters": {
+            "roleName": ["sso-audit-readonly-role", "prod-okta-admin-role", "prod-okta-developer-role"]
+          }
+        },
+        {
+          "requestParameters": {
+            "sAMLProviderArn": [{"suffix": ":saml-provider/ProdOktaSSO"}]
+          }
+        }
+      ]
+    }
+  }
+}

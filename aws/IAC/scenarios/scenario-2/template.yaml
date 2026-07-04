@@ -1,0 +1,184 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Deception Scenario 2 - Lure IAM Role with Secrets Manager secrets
+  containing fake payment gateway and internal service credentials.
+
+Parameters:
+  AccountId:
+    Type: String
+    Description: AWS Account ID for trust and resource policies
+
+Resources:
+
+  # ---------------------------------------------------------------
+  # IAM Role - looks like a payment secrets reader
+  # ---------------------------------------------------------------
+  PaymentSecretsReadonlyRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: payment-secrets-readonly-role
+      Description: Read-only access to payment gateway secrets for backend services
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AccountId}:root'
+            Action: 'sts:AssumeRole'
+      Tags:
+        - Key: Environment
+          Value: production
+        - Key: Project
+          Value: payment-platform
+        - Key: ManagedBy
+          Value: terraform
+        - Key: CostCenter
+          Value: CC-7192
+
+  PaymentSecretsPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: payment-secrets-readonly-policy
+      Roles:
+        - !Ref PaymentSecretsReadonlyRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: ListAllSecrets
+            Effect: Allow
+            Action:
+              - 'secretsmanager:ListSecrets'
+            Resource: '*'
+          - Sid: ReadPaymentSecrets
+            Effect: Allow
+            Action:
+              - 'secretsmanager:GetSecretValue'
+              - 'secretsmanager:DescribeSecret'
+            Resource:
+              - !Ref StripeKeysSecret
+              - !Ref BraintreeCredentialsSecret
+              - !Ref ServiceAccountsSecret
+
+  # ---------------------------------------------------------------
+  # Secret 1 - Stripe payment gateway keys
+  # ---------------------------------------------------------------
+  StripeKeysSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: prod/payment-gateway/stripe-keys
+      Description: Stripe live-mode API keys for production payment processing
+      SecretString: '{"placeholder": "replaced-by-deploy-script"}'
+      Tags:
+        - Key: Environment
+          Value: production
+        - Key: Project
+          Value: payment-platform
+        - Key: ManagedBy
+          Value: terraform
+        - Key: CostCenter
+          Value: CC-7192
+        - Key: RotationSchedule
+          Value: 90days
+
+  StripeKeysResourcePolicy:
+    Type: AWS::SecretsManager::ResourcePolicy
+    Properties:
+      SecretId: !Ref StripeKeysSecret
+      ResourcePolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowAccountRead
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AccountId}:root'
+            Action:
+              - 'secretsmanager:GetSecretValue'
+              - 'secretsmanager:DescribeSecret'
+            Resource: '*'
+
+  # ---------------------------------------------------------------
+  # Secret 2 - Braintree payment gateway credentials
+  # ---------------------------------------------------------------
+  BraintreeCredentialsSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: prod/payment-gateway/braintree-credentials
+      Description: Braintree merchant credentials for production payment fallback processor
+      SecretString: '{"placeholder": "replaced-by-deploy-script"}'
+      Tags:
+        - Key: Environment
+          Value: production
+        - Key: Project
+          Value: payment-platform
+        - Key: ManagedBy
+          Value: terraform
+        - Key: CostCenter
+          Value: CC-7192
+        - Key: RotationSchedule
+          Value: 90days
+
+  BraintreeCredentialsResourcePolicy:
+    Type: AWS::SecretsManager::ResourcePolicy
+    Properties:
+      SecretId: !Ref BraintreeCredentialsSecret
+      ResourcePolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowAccountRead
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AccountId}:root'
+            Action:
+              - 'secretsmanager:GetSecretValue'
+              - 'secretsmanager:DescribeSecret'
+            Resource: '*'
+
+  # ---------------------------------------------------------------
+  # Secret 3 - Internal service account credentials
+  # ---------------------------------------------------------------
+  ServiceAccountsSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: prod/internal-api/service-accounts
+      Description: Shared service account credentials for inter-service authentication
+      SecretString: '{"placeholder": "replaced-by-deploy-script"}'
+      Tags:
+        - Key: Environment
+          Value: production
+        - Key: Project
+          Value: payment-platform
+        - Key: ManagedBy
+          Value: terraform
+        - Key: CostCenter
+          Value: CC-7192
+
+  ServiceAccountsResourcePolicy:
+    Type: AWS::SecretsManager::ResourcePolicy
+    Properties:
+      SecretId: !Ref ServiceAccountsSecret
+      ResourcePolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowAccountRead
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AccountId}:root'
+            Action:
+              - 'secretsmanager:GetSecretValue'
+              - 'secretsmanager:DescribeSecret'
+            Resource: '*'
+
+Outputs:
+  RoleArn:
+    Description: ARN of the lure payment secrets role
+    Value: !GetAtt PaymentSecretsReadonlyRole.Arn
+  StripeSecretArn:
+    Description: ARN of the Stripe keys secret
+    Value: !Ref StripeKeysSecret
+  BraintreeSecretArn:
+    Description: ARN of the Braintree credentials secret
+    Value: !Ref BraintreeCredentialsSecret
+  ServiceAccountsSecretArn:
+    Description: ARN of the service accounts secret
+    Value: !Ref ServiceAccountsSecret
