@@ -1,0 +1,7 @@
+{
+  "github_pat": "ghp_1a2B3c4D5e6F7g8H9i0JkLmNoPqRsTuVwX",
+  "github_org": "acme-corp-internal",
+  "deploy_key_fingerprint": "SHA256:nThbg6kXUpJWGl7E1IGOCspRomTxdCARLviKw6E5",
+  "repo_scope": "acme-corp-internal/platform-monorepo",
+  "permissions": "repo, workflow, packages:read"
+}

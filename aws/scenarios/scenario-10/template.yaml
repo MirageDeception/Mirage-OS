@@ -1,0 +1,108 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Deception Scenario 12 - DynamoDB Lure: Fake Active Sessions Table.
+  A DynamoDB table seeded with realistic session records containing JWT
+  tokens and an IAM role granting read-only access. Every scan or query
+  generates CloudTrail events for detection.
+
+Parameters:
+  AccountId:
+    Type: String
+    Description: AWS Account ID for trust and resource policies
+
+Resources:
+
+  # ---------------------------------------------------------------
+  # IAM Role — session-store-readonly-role
+  # Assumable by any principal in the account. Grants DynamoDB
+  # read-only access scoped to the lure table.
+  # ---------------------------------------------------------------
+  SessionStoreReadonlyRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: session-store-readonly-role
+      Description: Read-only access to session store for platform monitoring
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AccountId}:root'
+            Action: 'sts:AssumeRole'
+      Tags:
+        - Key: Environment
+          Value: production
+        - Key: Project
+          Value: auth-platform
+        - Key: ManagedBy
+          Value: terraform
+        - Key: CostCenter
+          Value: CC-3180
+
+  SessionStoreReadonlyPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: session-store-readonly-policy
+      Roles:
+        - !Ref SessionStoreReadonlyRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: DynamoDBListTables
+            Effect: Allow
+            Action:
+              - 'dynamodb:ListTables'
+            Resource: '*'
+          - Sid: DynamoDBReadTable
+            Effect: Allow
+            Action:
+              - 'dynamodb:DescribeTable'
+              - 'dynamodb:Scan'
+              - 'dynamodb:Query'
+              - 'dynamodb:GetItem'
+            Resource: !GetAtt ActiveSessionsTable.Arn
+
+  # ---------------------------------------------------------------
+  # DynamoDB Table — prod-active-sessions
+  # On-demand billing, partition key session_id, sort key user_id.
+  # TTL on expires_at so records look like live sessions.
+  # ---------------------------------------------------------------
+  ActiveSessionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: prod-active-sessions
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: session_id
+          AttributeType: S
+        - AttributeName: user_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: session_id
+          KeyType: HASH
+        - AttributeName: user_id
+          KeyType: RANGE
+      TimeToLiveSpecification:
+        AttributeName: expires_at
+        Enabled: true
+      SSESpecification:
+        SSEEnabled: true
+      Tags:
+        - Key: Environment
+          Value: production
+        - Key: Project
+          Value: auth-platform
+        - Key: ManagedBy
+          Value: terraform
+
+Outputs:
+  DiscoveryRoleArn:
+    Description: ARN of the discovery role (session-store-readonly-role)
+    Value: !GetAtt SessionStoreReadonlyRole.Arn
+  TableArn:
+    Description: ARN of the lure DynamoDB table
+    Value: !GetAtt ActiveSessionsTable.Arn
+  TableName:
+    Description: Name of the lure DynamoDB table
+    Value: !Ref ActiveSessionsTable

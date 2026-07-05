@@ -1,0 +1,20 @@
+{
+  "report_type": "PCI-DSS Compliance Assessment",
+  "period": "2024-Q4",
+  "status": "passed_with_observations",
+  "assessor": "SecureAudit Partners LLC",
+  "cardholder_data_environment": {
+    "network_segments": ["10.0.50.0/24", "10.0.51.0/24"],
+    "encryption_standard": "AES-256-GCM",
+    "key_rotation_days": 90,
+    "tokenization_provider": "acme-token-vault.prod.internal.corp",
+    "pan_storage_locations": [
+      "prod-payments-db.c9aksj2e7rzo.us-west-2.rds.amazonaws.com:payments_prod.card_data",
+      "s3://prod-payment-archives-encrypted/card-transactions/"
+    ]
+  },
+  "observations": [
+    "Requirement 8.3.1: MFA not enforced for all admin console access",
+    "Requirement 10.6.1: Log review automation incomplete for 2 systems"
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "report_type": "SOX IT General Controls Assessment",
+  "fiscal_year": "2024",
+  "status": "effective",
+  "controls": [
+    {
+      "control_id": "ITGC-AC-001",
+      "description": "Access provisioning and deprovisioning",
+      "owner": "iam-admin@acme-corp.com",
+      "systems": ["AWS IAM", "Okta", "Active Directory"],
+      "admin_credentials_vault": "https://vault.prod.internal.corp/v1/secret/data/sox-admin"
+    },
+    {
+      "control_id": "ITGC-CM-003",
+      "description": "Change management for production databases",
+      "owner": "dba-team@acme-corp.com",
+      "approval_system": "https://jira.prod.internal.corp/projects/DBCM",
+      "db_admin_jumpbox": "10.0.2.50"
+    }
+  ]
+}

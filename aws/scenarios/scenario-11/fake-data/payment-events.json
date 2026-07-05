@@ -1,0 +1,144 @@
+[
+  {
+    "transaction_id": "txn_8a7f3b9e2d1c4f8a",
+    "customer_id": "cust_4210_00847",
+    "merchant_id": "merch_westcoast_electronics",
+    "card_token": "tok_1PxLv4mK8nQ2wR6tY0uP3sJ7dF",
+    "amount": 2499.99,
+    "currency": "USD",
+    "payment_method": "credit_card",
+    "error_code": "GATEWAY_TIMEOUT",
+    "error_message": "Payment gateway at https://payments-internal.prodservices.io:8443/v2/charge timed out after 30000ms",
+    "payment_gateway_response": {
+      "gateway": "internal-payment-processor",
+      "endpoint": "https://payments-internal.prodservices.io:8443/v2/charge",
+      "status_code": 504,
+      "trace_id": "pgt-a1b2c3d4e5f6",
+      "retry_count": 3
+    },
+    "timestamp": "2026-04-27T08:14:22Z",
+    "idempotency_key": "idem_8a7f3b9e2d1c"
+  },
+  {
+    "transaction_id": "txn_c4f8a6b0e5d9c3a7",
+    "customer_id": "cust_4210_01293",
+    "merchant_id": "merch_downtown_apparel",
+    "card_token": "tok_2QyMw5nL9oR3xS7uZ1vQ4tK8eG",
+    "amount": 189.50,
+    "currency": "USD",
+    "payment_method": "credit_card",
+    "error_code": "INSUFFICIENT_FUNDS",
+    "error_message": "Authorization declined by issuer via https://auth-gateway.prodservices.io/v1/authorize",
+    "payment_gateway_response": {
+      "gateway": "internal-payment-processor",
+      "endpoint": "https://auth-gateway.prodservices.io/v1/authorize",
+      "status_code": 402,
+      "trace_id": "pgt-b2c3d4e5f6a7",
+      "decline_code": "card_declined"
+    },
+    "timestamp": "2026-04-27T09:31:05Z",
+    "idempotency_key": "idem_c4f8a6b0e5d9"
+  },
+  {
+    "transaction_id": "txn_f1b4e8d2c6a0f5b9",
+    "customer_id": "cust_4210_00512",
+    "merchant_id": "merch_pacific_travel",
+    "card_token": "tok_3RzNx6oM0pS4yT8vA2wR5uL9fH",
+    "amount": 4750.00,
+    "currency": "USD",
+    "payment_method": "credit_card",
+    "error_code": "FRAUD_REVIEW_TIMEOUT",
+    "error_message": "Fraud scoring service at https://fraud-engine.prodservices.io:9443/v3/score did not respond within SLA",
+    "payment_gateway_response": {
+      "gateway": "internal-fraud-engine",
+      "endpoint": "https://fraud-engine.prodservices.io:9443/v3/score",
+      "status_code": 503,
+      "trace_id": "pgt-c3d4e5f6a7b8",
+      "risk_score": null
+    },
+    "timestamp": "2026-04-27T10:02:47Z",
+    "idempotency_key": "idem_f1b4e8d2c6a0"
+  },
+  {
+    "transaction_id": "txn_e3d7c1a4f8b2e6d0",
+    "customer_id": "cust_4210_02108",
+    "merchant_id": "merch_summit_software",
+    "card_token": "tok_4SaOy7pN1qT5zU9wB3xS6vM0gI",
+    "amount": 899.00,
+    "currency": "USD",
+    "payment_method": "debit_card",
+    "error_code": "PROCESSOR_ERROR",
+    "error_message": "Upstream processor returned 500 from https://processor-bridge.prodservices.io/v2/submit",
+    "payment_gateway_response": {
+      "gateway": "internal-processor-bridge",
+      "endpoint": "https://processor-bridge.prodservices.io/v2/submit",
+      "status_code": 500,
+      "trace_id": "pgt-d4e5f6a7b8c9",
+      "processor_reference": "ref_9e8f7a6b5c4d"
+    },
+    "timestamp": "2026-04-27T11:18:33Z",
+    "idempotency_key": "idem_e3d7c1a4f8b2"
+  },
+  {
+    "transaction_id": "txn_a9b7f3e2d1c4f8a6",
+    "customer_id": "cust_4210_00091",
+    "merchant_id": "merch_harbor_dining",
+    "card_token": "tok_5TbPz8qO2rU6aV0xC4yT7wN1hJ",
+    "amount": 342.75,
+    "currency": "USD",
+    "payment_method": "credit_card",
+    "error_code": "3DS_AUTHENTICATION_FAILED",
+    "error_message": "3D Secure challenge failed at https://3ds-gateway.prodservices.io/v2/authenticate",
+    "payment_gateway_response": {
+      "gateway": "internal-3ds-gateway",
+      "endpoint": "https://3ds-gateway.prodservices.io/v2/authenticate",
+      "status_code": 401,
+      "trace_id": "pgt-e5f6a7b8c9d0",
+      "eci_indicator": "07"
+    },
+    "timestamp": "2026-04-27T12:45:19Z",
+    "idempotency_key": "idem_a9b7f3e2d1c4"
+  },
+  {
+    "transaction_id": "txn_b0e5d9c3a7f1b4e8",
+    "customer_id": "cust_4210_01677",
+    "merchant_id": "merch_alpine_outdoors",
+    "card_token": "tok_6UcQa9rP3sV7bW1yD5zU8xO2iK",
+    "amount": 1275.00,
+    "currency": "USD",
+    "payment_method": "credit_card",
+    "error_code": "SETTLEMENT_FAILED",
+    "error_message": "Settlement batch rejected by https://settlement.prodservices.io/v1/batch — duplicate reference",
+    "payment_gateway_response": {
+      "gateway": "internal-settlement-engine",
+      "endpoint": "https://settlement.prodservices.io/v1/batch",
+      "status_code": 409,
+      "trace_id": "pgt-f6a7b8c9d0e1",
+      "batch_id": "batch_20260427_west"
+    },
+    "timestamp": "2026-04-27T13:22:08Z",
+    "idempotency_key": "idem_b0e5d9c3a7f1"
+  },
+  {
+    "transaction_id": "txn_d2c6a0f5b9e3d7c1",
+    "customer_id": "cust_4210_00334",
+    "merchant_id": "merch_metro_health",
+    "card_token": "tok_7VdRb0sQ4tW8cX2zE6aV9yP3jL",
+    "amount": 5200.00,
+    "currency": "USD",
+    "payment_method": "credit_card",
+    "error_code": "VELOCITY_LIMIT_EXCEEDED",
+    "error_message": "Transaction velocity limit exceeded per policy at https://risk-engine.prodservices.io/v2/velocity-check",
+    "payment_gateway_response": {
+      "gateway": "internal-risk-engine",
+      "endpoint": "https://risk-engine.prodservices.io/v2/velocity-check",
+      "status_code": 429,
+      "trace_id": "pgt-a7b8c9d0e1f2",
+      "velocity_window": "1h",
+      "current_count": 15,
+      "max_allowed": 10
+    },
+    "timestamp": "2026-04-27T14:07:51Z",
+    "idempotency_key": "idem_d2c6a0f5b9e3"
+  }
+]

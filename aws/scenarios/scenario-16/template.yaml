@@ -1,0 +1,159 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Deception Scenario 18 - Resource Tags Breadcrumb Trail.
+  Minimal resources (IAM roles + SSM parameter) tagged with ARNs and S3 URIs
+  that reference other resources. An attacker who enumerates tags discovers a
+  trail of breadcrumbs leading to additional (possibly non-existent) targets,
+  generating CloudTrail events at every hop.
+  Discovery role: resource-inventory-readonly-role.
+
+Parameters:
+  AccountId:
+    Type: String
+    Description: AWS Account ID for trust and resource policies
+
+Resources:
+
+  # ---------------------------------------------------------------
+  # IAM Role (Discovery) — resource-inventory-readonly-role
+  # Assumable by any principal in the account. Grants read-only
+  # access to resource tagging APIs so the attacker can enumerate
+  # tags across the account.
+  # ---------------------------------------------------------------
+  ResourceInventoryReadonlyRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: resource-inventory-readonly-role
+      Description: Read-only resource inventory access for cloud governance team
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AccountId}:root'
+            Action: 'sts:AssumeRole'
+      Tags:
+        - Key: Environment
+          Value: production
+        - Key: Project
+          Value: cloud-governance
+        - Key: ManagedBy
+          Value: terraform
+        - Key: CostCenter
+          Value: CC-7200
+
+  ResourceInventoryReadonlyPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: resource-inventory-readonly-policy
+      Roles:
+        - !Ref ResourceInventoryReadonlyRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: TaggingAPIs
+            Effect: Allow
+            Action:
+              - 'tag:GetResources'
+              - 'tag:GetTagKeys'
+              - 'tag:GetTagValues'
+              - 'resourcegroupstaggingapi:GetResources'
+            Resource: '*'
+          - Sid: ServiceSpecificTagReads
+            Effect: Allow
+            Action:
+              - 'iam:ListRoleTags'
+              - 'lambda:ListTags'
+              - 's3:GetBucketTagging'
+              - 'ssm:ListTagsForResource'
+            Resource: '*'
+
+  # ---------------------------------------------------------------
+  # Breadcrumb Resource 1 — prod-backup-automation-role
+  # Tags point to an S3 bucket and a Secrets Manager secret.
+  # ---------------------------------------------------------------
+  BackupAutomationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: prod-backup-automation-role
+      Description: Automated backup orchestration for production workloads
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Tags:
+        - Key: Environment
+          Value: production
+        - Key: Project
+          Value: backup-orchestration
+        - Key: ManagedBy
+          Value: terraform
+        - Key: CostCenter
+          Value: CC-7200
+        - Key: ConfigBackup
+          Value: s3://prod-config-backup-vault/iam-export.json
+        - Key: SecretsRef
+          Value: !Sub 'arn:aws:secretsmanager:us-west-2:${AccountId}:secret:prod/master-api-keys'
+        - Key: EncryptionKeyRef
+          Value: alias/prod-master-encryption
+        - Key: RelatedPipeline
+          Value: !Sub 'arn:aws:codepipeline:us-west-2:${AccountId}:prod-backup-pipeline'
+
+  # ---------------------------------------------------------------
+  # Breadcrumb Resource 2 — SSM Parameter /prod/inventory/service-registry
+  # Tags point to an IAM role and a DynamoDB backup bucket.
+  # ---------------------------------------------------------------
+  ServiceRegistryParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /prod/inventory/service-registry
+      Description: Production service registry — microservice endpoints and health check configuration
+      Type: String
+      Tier: Standard
+      Value: !Sub |
+        {
+          "registry_version": "3.2.1",
+          "last_updated": "2026-04-18T03:22:00Z",
+          "services": {
+            "user-api": {
+              "endpoint": "https://user-api.prod.internal.corp:8443/v2",
+              "health_check": "/healthz",
+              "owner": "platform-team"
+            },
+            "payment-gateway": {
+              "endpoint": "https://payments.prod.internal.corp:8443/v1",
+              "health_check": "/status",
+              "owner": "fintech-team"
+            },
+            "notification-service": {
+              "endpoint": "https://notify.prod.internal.corp:8443/v1",
+              "health_check": "/ping",
+              "owner": "engagement-team"
+            }
+          },
+          "config_bucket": "s3://prod-service-configs-${AccountId}/registry/"
+        }
+      Tags:
+        Environment: production
+        Project: cloud-governance
+        ManagedBy: terraform
+        CostCenter: CC-7200
+        RelatedRole: !Sub 'arn:aws:iam::${AccountId}:role/prod-data-admin-role'
+        BackupBucket: s3://prod-dynamodb-backups/customer-data/
+        MonitoringDashboard: !Sub 'arn:aws:cloudwatch::${AccountId}:dashboard/prod-service-health'
+
+Outputs:
+  DiscoveryRoleArn:
+    Description: ARN of the discovery role (resource-inventory-readonly-role)
+    Value: !GetAtt ResourceInventoryReadonlyRole.Arn
+  BreadcrumbRoleArn:
+    Description: ARN of the breadcrumb IAM role (prod-backup-automation-role)
+    Value: !GetAtt BackupAutomationRole.Arn
+  SSMParameterArn:
+    Description: ARN of the breadcrumb SSM parameter
+    Value: !Sub 'arn:aws:ssm:${AWS::Region}:${AccountId}:parameter/prod/inventory/service-registry'

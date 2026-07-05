@@ -1,0 +1,22 @@
+{
+  "datadog_api_key": "dd_api_4f8a2c6e1b9d3f7a5c0e8b2d6f4a1c9e",
+  "datadog_app_key": "dd_app_7b3e9f1a5d2c8g4h6j0k2l4m8n6p0q2r",
+  "datadog_site": "datadoghq.com",
+  "pagerduty_integration_key": "pd_r04czb8s3e7k1m5n9p2q6t0v",
+  "pagerduty_service_id": "PCORE-DB-001",
+  "alert_webhook_url": "https://hooks.slack.com/services/T04PROD01/B04DBMON/wXyZaBcDeFgHiJkLmNoPqRsT",
+  "alert_channels": {
+    "critical": "#db-critical-alerts",
+    "warning": "#db-performance-alerts",
+    "info": "#db-operations"
+  },
+  "monitoring_dashboard": "https://app.datadoghq.com/dashboard/abc-def-ghi/prod-core-db",
+  "metrics_retention_days": 395,
+  "custom_metrics": [
+    "db.connections.active",
+    "db.replication.lag_ms",
+    "db.queries.slow_count",
+    "db.storage.used_pct"
+  ],
+  "escalation_policy": "prod-database-oncall"
+}

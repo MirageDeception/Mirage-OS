@@ -1,0 +1,16 @@
+{
+  "backup_bucket": "s3://prod-db-backups-839174625013/core-production/",
+  "backup_schedule": "cron(0 3 * * ? *)",
+  "retention_days": 90,
+  "backup_encryption_key": "arn:aws:kms:us-west-2:839174625013:key/a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "snapshot_prefix": "prod-core-db-snapshot",
+  "cross_region_copy": {
+    "enabled": true,
+    "target_region": "us-east-1",
+    "target_bucket": "s3://prod-db-backups-dr-839174625013/core-production/"
+  },
+  "last_successful_backup": "2026-04-27T03:00:00Z",
+  "backup_service_account": "arn:aws:iam::839174625013:role/prod-db-backup-automation",
+  "pitr_enabled": true,
+  "see_also": "/prod/db/encryption-config"
+}

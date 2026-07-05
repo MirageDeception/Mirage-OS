@@ -1,0 +1,180 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Deception Scenario 20 - SSM Parameter Cross-Reference Chain.
+  Five SSM parameters under /prod/db/* that cross-reference each other via
+  a see_also field, creating a breadcrumb chain the attacker follows.
+  Discovery role: infra-params-readonly-role.
+
+Parameters:
+  AccountId:
+    Type: String
+    Description: AWS Account ID for trust and resource policies
+
+Resources:
+
+  # ---------------------------------------------------------------
+  # IAM Role (Discovery) — infra-params-readonly-role
+  # Assumable by any principal in the account. Grants read-only
+  # access to SSM parameters under /prod/db/*.
+  # ---------------------------------------------------------------
+  InfraParamsReadonlyRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: infra-params-readonly-role
+      Description: Read-only infrastructure parameter access for SRE team
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AccountId}:root'
+            Action: 'sts:AssumeRole'
+      Tags:
+        - Key: Environment
+          Value: production
+        - Key: Project
+          Value: core-infrastructure
+        - Key: ManagedBy
+          Value: terraform
+        - Key: CostCenter
+          Value: CC-3100
+
+  InfraParamsReadonlyPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: infra-params-readonly-policy
+      Roles:
+        - !Ref InfraParamsReadonlyRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: SSMDescribeAll
+            Effect: Allow
+            Action:
+              - 'ssm:DescribeParameters'
+            Resource: '*'
+          - Sid: SSMReadProdDb
+            Effect: Allow
+            Action:
+              - 'ssm:GetParameter'
+              - 'ssm:GetParameters'
+            Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AccountId}:parameter/prod/db/*'
+          - Sid: SSMGetByPath
+            Effect: Allow
+            Action:
+              - 'ssm:GetParametersByPath'
+            Resource:
+              - !Sub 'arn:aws:ssm:${AWS::Region}:${AccountId}:parameter/prod/db'
+              - !Sub 'arn:aws:ssm:${AWS::Region}:${AccountId}:parameter/prod/db/*'
+
+  # ---------------------------------------------------------------
+  # SSM Parameter 1 — /prod/db/primary
+  # Primary DB connection. see_also → /prod/db/replica
+  # ---------------------------------------------------------------
+  DbPrimaryParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /prod/db/primary
+      Description: Production primary database connection configuration
+      Type: String
+      Tier: Standard
+      Value: '{"placeholder": "replaced-by-deploy-script"}'
+      Tags:
+        Environment: production
+        Project: core-infrastructure
+        ManagedBy: terraform
+        CostCenter: CC-3100
+
+  # ---------------------------------------------------------------
+  # SSM Parameter 2 — /prod/db/replica
+  # Replica endpoint. see_also → /prod/db/backup-config
+  # ---------------------------------------------------------------
+  DbReplicaParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /prod/db/replica
+      Description: Production read replica database connection configuration
+      Type: String
+      Tier: Standard
+      Value: '{"placeholder": "replaced-by-deploy-script"}'
+      Tags:
+        Environment: production
+        Project: core-infrastructure
+        ManagedBy: terraform
+        CostCenter: CC-3100
+
+  # ---------------------------------------------------------------
+  # SSM Parameter 3 — /prod/db/backup-config
+  # Backup S3 bucket + schedule. see_also → /prod/db/encryption-config
+  # ---------------------------------------------------------------
+  DbBackupConfigParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /prod/db/backup-config
+      Description: Production database backup configuration and S3 storage
+      Type: String
+      Tier: Standard
+      Value: '{"placeholder": "replaced-by-deploy-script"}'
+      Tags:
+        Environment: production
+        Project: core-infrastructure
+        ManagedBy: terraform
+        CostCenter: CC-3100
+
+  # ---------------------------------------------------------------
+  # SSM Parameter 4 — /prod/db/encryption-config
+  # KMS key ARN + rotation. see_also → /prod/db/monitoring
+  # ---------------------------------------------------------------
+  DbEncryptionConfigParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /prod/db/encryption-config
+      Description: Production database encryption and TLS configuration
+      Type: String
+      Tier: Standard
+      Value: '{"placeholder": "replaced-by-deploy-script"}'
+      Tags:
+        Environment: production
+        Project: core-infrastructure
+        ManagedBy: terraform
+        CostCenter: CC-3100
+
+  # ---------------------------------------------------------------
+  # SSM Parameter 5 — /prod/db/monitoring
+  # Datadog/PagerDuty integration keys + webhook URLs.
+  # Terminal node — no see_also (end of chain).
+  # ---------------------------------------------------------------
+  DbMonitoringParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /prod/db/monitoring
+      Description: Production database monitoring and alerting integration
+      Type: String
+      Tier: Standard
+      Value: '{"placeholder": "replaced-by-deploy-script"}'
+      Tags:
+        Environment: production
+        Project: core-infrastructure
+        ManagedBy: terraform
+        CostCenter: CC-3100
+
+Outputs:
+  DiscoveryRoleArn:
+    Description: ARN of the discovery role (infra-params-readonly-role)
+    Value: !GetAtt InfraParamsReadonlyRole.Arn
+  PrimaryParamArn:
+    Description: ARN of the /prod/db/primary SSM parameter
+    Value: !Sub 'arn:aws:ssm:${AWS::Region}:${AccountId}:parameter/prod/db/primary'
+  ReplicaParamArn:
+    Description: ARN of the /prod/db/replica SSM parameter
+    Value: !Sub 'arn:aws:ssm:${AWS::Region}:${AccountId}:parameter/prod/db/replica'
+  BackupConfigParamArn:
+    Description: ARN of the /prod/db/backup-config SSM parameter
+    Value: !Sub 'arn:aws:ssm:${AWS::Region}:${AccountId}:parameter/prod/db/backup-config'
+  EncryptionConfigParamArn:
+    Description: ARN of the /prod/db/encryption-config SSM parameter
+    Value: !Sub 'arn:aws:ssm:${AWS::Region}:${AccountId}:parameter/prod/db/encryption-config'
+  MonitoringParamArn:
+    Description: ARN of the /prod/db/monitoring SSM parameter
+    Value: !Sub 'arn:aws:ssm:${AWS::Region}:${AccountId}:parameter/prod/db/monitoring'
