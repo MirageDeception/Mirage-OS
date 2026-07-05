@@ -1,7 +1,0 @@
-{
-  "stripe_secret_key": "sk_live_51HzGr4eC39HqLyjWDarjtT1zdp7dc",
-  "stripe_publishable_key": "pk_live_TYooMQauvdEDq54NiTphI7jx",
-  "stripe_webhook_secret": "whsec_t4hG7kL2mN9pQ1rS3uV5wX8y",
-  "environment": "production",
-  "last_rotated": "2024-08-15T00:00:00Z"
-}

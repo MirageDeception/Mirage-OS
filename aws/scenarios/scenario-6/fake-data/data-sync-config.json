@@ -1,9 +1,0 @@
-{
-  "auth_service": "https://auth.prod.internal.corp/oauth/token",
-  "auth_client_id": "data-sync-svc-prod",
-  "auth_client_secret": "oAuth_cl13nt_s3cr3t_pr0d_9xK2mV",
-  "data_lake_endpoint": "https://datalake.prod.internal.corp/api/v1",
-  "data_lake_api_key": "dlk_prod_7fA9bC1dE3gH5iJ7kL9mN",
-  "retry_max": 3,
-  "timeout_seconds": 300
-}
