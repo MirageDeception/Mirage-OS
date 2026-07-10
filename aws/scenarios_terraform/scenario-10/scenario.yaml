@@ -1,0 +1,41 @@
+number: 10
+name: "DynamoDB Active Sessions Table"
+slug: "dynamodb-sessions"
+version: "1.0.0"
+category: "data-exfil"
+service: "dynamodb"
+
+description: |
+  A DynamoDB table seeded with realistic session records containing JWT tokens and an IAM role granting read-only access.
+  Every scan or query generates CloudTrail events..
+
+resources:
+  - type: iam_role
+    tf_variable: "account_id"
+    purpose: "See details.md"
+  - type: dynamodb_table
+    tf_variable: "account_id"
+    purpose: "See details.md"
+
+attack_path:
+  - "Attacker discovers session-store-readonly-role"
+  - "Attacker assumes role and scans active sessions table"
+  - "JWT tokens retrieved (all EXPIRED/FABRICATED)"
+  - "CRITICAL alert fires"
+
+detection:
+  events:
+    - source: "aws.sts"
+      detail_type: "AWS API Call via CloudTrail"
+      api_calls: ["AssumeRole"]
+    - source: "aws.dynamodb"
+      detail_type: "AWS API Call via CloudTrail"
+      api_calls: ["Scan","Query","GetItem","DescribeTable"]
+  severity: "CRITICAL"
+
+terraform:
+  required_variables:
+    - "account_id"
+  outputs:
+    - "role_arn"
+    - "table_arn"

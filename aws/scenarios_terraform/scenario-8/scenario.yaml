@@ -1,0 +1,44 @@
+number: 8
+name: "IAM Role Chain Loop"
+slug: "iam-role-chain"
+version: "1.0.0"
+category: "lateral-movement"
+service: "iam"
+
+description: |
+  Three IAM roles in a circular assumption chain (A->B->C->A).
+  Each role has read access to a themed SSM parameter containing fake credentials.
+  Every hop generates CloudTrail events..
+
+resources:
+  - type: iam_role
+    tf_variable: "account_id"
+    purpose: "See details.md"
+  - type: ssm_parameter
+    tf_variable: "account_id"
+    purpose: "See details.md"
+
+attack_path:
+  - "Attacker discovers first role ARN in chain"
+  - "Attacker calls AssumeRole on Role A"
+  - "Attacker follows chain: A->B->C"
+  - "Each hop reads SSM parameter with fake credentials"
+  - "All hops generate CloudTrail events -> HIGH alert"
+
+detection:
+  events:
+    - source: "aws.sts"
+      detail_type: "AWS API Call via CloudTrail"
+      api_calls: ["AssumeRole"]
+    - source: "aws.ssm"
+      detail_type: "AWS API Call via CloudTrail"
+      api_calls: ["GetParameter","GetParameters"]
+  severity: "HIGH"
+
+terraform:
+  required_variables:
+    - "account_id"
+  outputs:
+    - "role_arn_a"
+    - "role_arn_b"
+    - "role_arn_c"

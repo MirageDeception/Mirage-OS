@@ -1,0 +1,43 @@
+number: 11
+name: "SQS Payment Events DLQ"
+slug: "sqs-payment-dlq"
+version: "1.0.0"
+category: "data-exfil"
+service: "sqs"
+
+description: |
+  A FIFO queue pair (main + DLQ) seeded with fake failed payment event messages.
+  An IAM role granting read-only access.
+  Every queue interaction generates CloudTrail events..
+
+resources:
+  - type: iam_role
+    tf_variable: "account_id"
+    purpose: "See details.md"
+  - type: sqs_queue
+    tf_variable: "account_id"
+    purpose: "See details.md"
+
+attack_path:
+  - "Attacker discovers payment-queue-readonly-role"
+  - "Attacker assumes role"
+  - "Attacker calls sqs:ReceiveMessage on DLQ"
+  - "HIGH alert fires"
+
+detection:
+  events:
+    - source: "aws.sts"
+      detail_type: "AWS API Call via CloudTrail"
+      api_calls: ["AssumeRole"]
+    - source: "aws.sqs"
+      detail_type: "AWS API Call via CloudTrail"
+      api_calls: ["ReceiveMessage","GetQueueAttributes","ListQueues"]
+  severity: "HIGH"
+
+terraform:
+  required_variables:
+    - "account_id"
+  outputs:
+    - "role_arn"
+    - "dlq_url"
+    - "main_queue_url"

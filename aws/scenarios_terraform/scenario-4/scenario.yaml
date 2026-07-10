@@ -1,0 +1,42 @@
+number: 4
+name: "Bastion Host Breadcrumb"
+slug: "bastion-host"
+version: "1.0.0"
+category: "lateral-movement"
+service: "ec2"
+
+description: |
+  Deploys a fake bastion EC2 instance seeded with sensitive-looking files in
+  user data. Includes an IAM instance profile with lure permissions. An
+  attacker who pivots through the bastion generates CloudTrail events.
+
+resources:
+  - type: iam_role
+    tf_variable: "account_id"
+    purpose: "Instance profile role for bastion"
+  - type: s3_bucket
+    tf_variable: "account_id"
+    purpose: "Deploy keys store linked to bastion"
+
+attack_path:
+  - "Attacker gains access to bastion instance metadata"
+  - "Attacker retrieves instance profile credentials from IMDS"
+  - "Attacker uses credentials to enumerate S3 or SSM"
+  - "API calls generate CloudTrail events → HIGH alert"
+
+detection:
+  events:
+    - source: "aws.sts"
+      detail_type: "AWS API Call via CloudTrail"
+      api_calls: ["AssumeRole", "GetCallerIdentity"]
+    - source: "aws.s3"
+      detail_type: "AWS API Call via CloudTrail"
+      api_calls: ["GetObject", "ListBucket", "ListObjects"]
+  severity: "HIGH"
+
+terraform:
+  required_variables:
+    - "account_id"
+  outputs:
+    - "instance_id"
+    - "role_arn"

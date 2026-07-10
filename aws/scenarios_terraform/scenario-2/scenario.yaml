@@ -1,0 +1,48 @@
+number: 2
+name: "Payment Gateway Secrets Lure"
+slug: "payment-secrets"
+version: "1.0.0"
+category: "credential-theft"
+service: "secretsmanager"
+
+description: |
+  Deploys a lure IAM role and three Secrets Manager secrets that mimic
+  real payment gateway credentials (Stripe, Braintree) and internal service
+  accounts. Any GetSecretValue or AssumeRole action triggers a CRITICAL alert.
+  All secret values are marked MIRAGE-DECEPTION-FABRICATED-EXPIRED.
+
+resources:
+  - type: iam_role
+    tf_variable: "account_id"
+    purpose: "Lure role granting read access to payment secrets"
+  - type: secrets_manager
+    tf_variable: "account_id"
+    purpose: "Stripe API keys (fabricated)"
+  - type: secrets_manager
+    tf_variable: "account_id"
+    purpose: "Braintree credentials (fabricated)"
+  - type: secrets_manager
+    tf_variable: "account_id"
+    purpose: "Internal service accounts (fabricated)"
+
+attack_path:
+  - "Attacker discovers payment-secrets-readonly-role ARN"
+  - "Attacker calls sts:AssumeRole on the lure role"
+  - "Attacker calls secretsmanager:GetSecretValue"
+  - "CloudTrail events generated for each API call → CRITICAL alert"
+
+detection:
+  events:
+    - source: "aws.sts"
+      detail_type: "AWS API Call via CloudTrail"
+      api_calls: ["AssumeRole"]
+    - source: "aws.secretsmanager"
+      detail_type: "AWS API Call via CloudTrail"
+      api_calls: ["GetSecretValue", "ListSecrets", "DescribeSecret"]
+  severity: "CRITICAL"
+
+terraform:
+  required_variables:
+    - "account_id"
+  outputs:
+    - "role_arn"

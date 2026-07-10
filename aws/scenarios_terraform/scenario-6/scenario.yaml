@@ -1,0 +1,42 @@
+number: 6
+name: "Lambda Blueprint (Hardcoded Secrets)"
+slug: "lambda-blueprint"
+version: "1.0.0"
+category: "credential-theft"
+service: "lambda"
+
+description: |
+  A Lambda function with hardcoded secrets in environment variables.
+  A discovery role grants read-only access to Lambda configuration.
+  Downstream pivot targets include S3, Secrets Manager, and SSM..
+
+resources:
+  - type: iam_role
+    tf_variable: "account_id"
+    purpose: "See details.md"
+  - type: lambda_function
+    tf_variable: "account_id"
+    purpose: "See details.md"
+
+attack_path:
+  - "Attacker discovers discovery role ARN"
+  - "Attacker calls lambda:GetFunctionConfiguration"
+  - "Attacker reads hardcoded environment variable credentials"
+  - "CloudTrail events generated -> HIGH alert"
+
+detection:
+  events:
+    - source: "aws.sts"
+      detail_type: "AWS API Call via CloudTrail"
+      api_calls: ["AssumeRole"]
+    - source: "aws.lambda"
+      detail_type: "AWS API Call via CloudTrail"
+      api_calls: ["GetFunction","ListFunctions","GetFunctionConfiguration"]
+  severity: "HIGH"
+
+terraform:
+  required_variables:
+    - "account_id"
+  outputs:
+    - "role_arn"
+    - "function_arn"

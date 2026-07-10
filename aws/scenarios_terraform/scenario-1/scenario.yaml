@@ -1,0 +1,49 @@
+number: 1
+name: "Lure Terraform State Bucket"
+slug: "terraform-state"
+version: "1.0.0"
+category: "credential-theft"
+service: "s3"
+
+description: |
+  Deploys a realistic S3 bucket mimicking a Terraform state file backend
+  with a lure IAM role that grants read access. Any AssumeRole or GetObject
+  triggers an immediate CRITICAL alert. The bucket contains a fake tfstate
+  file with EXPIRED placeholder credentials.
+
+resources:
+  - type: iam_role
+    tf_variable: "account_id"
+    purpose: "Lure role for S3 Terraform state access"
+  - type: s3_bucket
+    tf_variable: "account_id"
+    purpose: "Fake Terraform state backend"
+
+seed:
+  - kind: s3
+    source: "fake-data/terraform.tfstate"
+    destination_key: "env/production/terraform.tfstate"
+
+attack_path:
+  - "Attacker discovers role ARN via metadata or config leak"
+  - "Attacker calls sts:AssumeRole on infra-s3-data-readonly-role"
+  - "Attacker calls s3:GetObject on the fake tfstate file"
+  - "Both actions generate CloudTrail events → CRITICAL alert"
+
+detection:
+  events:
+    - source: "aws.sts"
+      detail_type: "AWS API Call via CloudTrail"
+      api_calls: ["AssumeRole"]
+    - source: "aws.s3"
+      detail_type: "AWS API Call via CloudTrail"
+      api_calls: ["GetObject", "ListObjects", "ListBucket"]
+  severity: "CRITICAL"
+
+terraform:
+  required_variables:
+    - "account_id"
+  outputs:
+    - "role_arn"
+    - "bucket_arn"
+    - "bucket_name"

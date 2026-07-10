@@ -1,0 +1,48 @@
+number: 17
+name: "Lambda and DynamoDB PII Pipeline"
+slug: "lambda-dynamo-pii"
+version: "1.0.0"
+category: "data-exfil"
+service: "lambda"
+
+description: |
+  A Lambda function with environment variable API keys and a DynamoDB table seeded with enriched user PII records.
+  Discovery role: etl-ops-readonly-role..
+
+resources:
+  - type: iam_role
+    tf_variable: "account_id"
+    purpose: "See details.md"
+  - type: lambda_function
+    tf_variable: "account_id"
+    purpose: "See details.md"
+  - type: dynamodb_table
+    tf_variable: "account_id"
+    purpose: "See details.md"
+
+attack_path:
+  - "Attacker discovers etl-ops-readonly-role"
+  - "Attacker calls lambda:GetFunctionConfiguration for env vars"
+  - "Attacker scans DynamoDB PII table"
+  - "CRITICAL alert fires - PII + credentials"
+
+detection:
+  events:
+    - source: "aws.sts"
+      detail_type: "AWS API Call via CloudTrail"
+      api_calls: ["AssumeRole"]
+    - source: "aws.lambda"
+      detail_type: "AWS API Call via CloudTrail"
+      api_calls: ["GetFunction","InvokeFunction"]
+    - source: "aws.dynamodb"
+      detail_type: "AWS API Call via CloudTrail"
+      api_calls: ["Scan","Query","GetItem"]
+  severity: "CRITICAL"
+
+terraform:
+  required_variables:
+    - "account_id"
+  outputs:
+    - "role_arn"
+    - "function_arn"
+    - "table_arn"

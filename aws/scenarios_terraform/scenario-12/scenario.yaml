@@ -1,0 +1,42 @@
+number: 12
+name: "SNS Critical Alerts Topic"
+slug: "sns-alerts-topic"
+version: "1.0.0"
+category: "data-exfil"
+service: "sns"
+
+description: |
+  An SNS topic with dummy subscriptions kept in PendingConfirmation state.
+  An IAM role granting read-only access.
+  Any attempt to list or read attributes triggers detection..
+
+resources:
+  - type: iam_role
+    tf_variable: "account_id"
+    purpose: "See details.md"
+  - type: sns_topic
+    tf_variable: "account_id"
+    purpose: "See details.md"
+
+attack_path:
+  - "Attacker discovers alerts-readonly-role"
+  - "Attacker assumes role"
+  - "Attacker calls sns:ListSubscriptionsByTopic to find subscriber endpoints"
+  - "HIGH alert fires"
+
+detection:
+  events:
+    - source: "aws.sts"
+      detail_type: "AWS API Call via CloudTrail"
+      api_calls: ["AssumeRole"]
+    - source: "aws.sns"
+      detail_type: "AWS API Call via CloudTrail"
+      api_calls: ["ListTopics","GetTopicAttributes","ListSubscriptionsByTopic"]
+  severity: "HIGH"
+
+terraform:
+  required_variables:
+    - "account_id"
+  outputs:
+    - "role_arn"
+    - "topic_arn"

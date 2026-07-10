@@ -1,0 +1,45 @@
+number: 19
+name: "CloudFormation Stack Outputs Lure"
+slug: "cfn-stack-outputs"
+version: "1.0.0"
+category: "credential-theft"
+service: "cloudformation"
+
+description: |
+  A CloudFormation stack that exposes realistic-looking credentials in its stack outputs and cross-stack exports.
+  SSM parameters created as placeholders.
+  Discovery role: cfn-audit-readonly-role..
+
+resources:
+  - type: iam_role
+    tf_variable: "account_id"
+    purpose: "See details.md"
+  - type: ssm_parameter
+    tf_variable: "account_id"
+    purpose: "See details.md"
+
+attack_path:
+  - "Attacker discovers cfn-audit-readonly-role"
+  - "Attacker calls cloudformation:DescribeStacks"
+  - "Attacker reads stack outputs containing fake credentials"
+  - "CRITICAL alert fires"
+
+detection:
+  events:
+    - source: "aws.sts"
+      detail_type: "AWS API Call via CloudTrail"
+      api_calls: ["AssumeRole"]
+    - source: "aws.cloudformation"
+      detail_type: "AWS API Call via CloudTrail"
+      api_calls: ["DescribeStacks","ListStacks","DescribeStackResource"]
+    - source: "aws.ssm"
+      detail_type: "AWS API Call via CloudTrail"
+      api_calls: ["GetParameter"]
+  severity: "CRITICAL"
+
+terraform:
+  required_variables:
+    - "account_id"
+  outputs:
+    - "role_arn"
+    - "stack_id"

@@ -1,0 +1,42 @@
+number: 5
+name: "ECR Payment Service Container"
+slug: "ecr-payment"
+version: "1.0.0"
+category: "privilege-escalation"
+service: "ecr"
+
+description: |
+  Deploys a lure ECR repository mimicking a payment service container registry.
+  Includes an IAM instance profile that can be linked to the scenario-4 bastion.
+  Any attempt to pull or describe images triggers detection.
+
+resources:
+  - type: iam_role
+    tf_variable: "account_id"
+    purpose: "ECR read role for bastion instance profile"
+  - type: ecr_repository
+    tf_variable: "account_id"
+    purpose: "Fake payment service container registry"
+
+attack_path:
+  - "Attacker discovers ECR repository via role enumeration"
+  - "Attacker calls ecr:GetAuthorizationToken"
+  - "Attacker calls ecr:BatchGetImage or ecr:GetDownloadUrlForLayer"
+  - "CloudTrail events generated → HIGH alert"
+
+detection:
+  events:
+    - source: "aws.ecr"
+      detail_type: "AWS API Call via CloudTrail"
+      api_calls: ["GetAuthorizationToken", "BatchGetImage", "GetDownloadUrlForLayer", "DescribeRepositories"]
+    - source: "aws.sts"
+      detail_type: "AWS API Call via CloudTrail"
+      api_calls: ["AssumeRole"]
+  severity: "HIGH"
+
+terraform:
+  required_variables:
+    - "account_id"
+  outputs:
+    - "repository_url"
+    - "role_arn"
