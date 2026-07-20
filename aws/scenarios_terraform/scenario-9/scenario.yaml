@@ -12,11 +12,17 @@ description: |
 
 resources:
   - type: iam_role
-    tf_variable: "account_id"
-    purpose: "See details.md"
+    tf_variable: "role_readonly"
+    key: "customer-data-readonly"
+    purpose: "Readonly role"
   - type: dynamodb_table
-    tf_variable: "account_id"
-    purpose: "See details.md"
+    tf_variable: "table_profiles"
+    key: "customer-profiles"
+    purpose: "Profiles table"
+  - type: dynamodb_table
+    tf_variable: "table_sessions"
+    key: "active-sessions"
+    purpose: "Sessions table"
 
 attack_path:
   - "Attacker discovers customer-profiles-readonly-role"
@@ -37,6 +43,9 @@ detection:
 terraform:
   required_variables:
     - "account_id"
+    - "role_readonly"
+    - "table_profiles"
+    - "table_sessions"
   outputs:
     - "role_arn"
     - "customer_table_arn"

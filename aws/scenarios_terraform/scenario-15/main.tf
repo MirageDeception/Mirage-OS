@@ -3,7 +3,7 @@ provider "aws" {
 }
 
 resource "aws_iam_role" "sso_audit_readonly_role" {
-  name                 = "sso-audit-readonly-role"
+  name                 = var.role_audit
   description          = "Read-only SSO audit access for identity and access management reviews"
   max_session_duration = 3600
 
@@ -13,7 +13,7 @@ resource "aws_iam_role" "sso_audit_readonly_role" {
       {
         Effect = "Allow"
         Principal = {
-          AWS = "arn:aws:iam::$${var.account_id}:root"
+          AWS = "arn:aws:iam::${var.account_id}:root"
         }
         Action = "sts:AssumeRole"
       }
@@ -85,7 +85,7 @@ resource "aws_iam_saml_provider" "okta_saml_provider" {
 }
 
 resource "aws_iam_role" "okta_admin_role" {
-  name                 = "prod-okta-admin-role"
+  name                 = var.role_admin
   description          = "Production administrator access via Okta SSO federation"
   max_session_duration = 14400
 
@@ -120,7 +120,7 @@ resource "aws_iam_role" "okta_admin_role" {
 }
 
 resource "aws_iam_role" "okta_developer_role" {
-  name                 = "prod-okta-developer-role"
+  name                 = var.role_developer
   description          = "Production developer access via Okta SSO federation"
   max_session_duration = 14400
 

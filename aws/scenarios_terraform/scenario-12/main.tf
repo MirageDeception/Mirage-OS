@@ -4,7 +4,7 @@ data "aws_region" "current" {}
 # IAM Role (Discovery) — alerts-readonly-role
 # ---------------------------------------------------------------
 resource "aws_iam_role" "alerts_readonly_role" {
-  name                 = "alerts-readonly-role"
+  name                 = var.role_name
   description          = "Read-only access to SNS alerting infrastructure for SRE team"
   max_session_duration = 3600
 
@@ -66,7 +66,7 @@ resource "aws_iam_policy" "alerts_readonly_policy" {
 # SNS Topic — prod-alerts-critical
 # ---------------------------------------------------------------
 resource "aws_sns_topic" "critical_alerts_topic" {
-  name              = "prod-alerts-critical"
+  name              = var.topic_name
   display_name      = "Production Critical Alerts"
   kms_master_key_id = "alias/aws/sns"
 
@@ -115,8 +115,8 @@ resource "aws_sns_topic_policy" "critical_alerts_topic_policy" {
 # ---------------------------------------------------------------
 resource "aws_sns_topic_subscription" "https_subscription" {
   topic_arn = aws_sns_topic.critical_alerts_topic.arn
-  protocol  = "https"
-  endpoint  = "https://hooks.prod.svc.internal/alerts/critical"
+  protocol  = "email"
+  endpoint  = "dummy-webhook@example.com"
 }
 
 # ---------------------------------------------------------------

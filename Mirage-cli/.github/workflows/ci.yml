@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Mirage-cli
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+        cache: true
+
+    - name: Run Tests
+      run: go test -v ./...
+
+    - name: golangci-lint
+      uses: golangci/golangci-lint-action@v3
+      with:
+        version: latest
+        working-directory: Mirage-cli
+
+    - name: Build Binary (Linux amd64)
+      run: GOOS=linux GOARCH=amd64 make build
+      
+    - name: Build Binary (Darwin amd64)
+      run: GOOS=darwin GOARCH=amd64 make build
+      
+    - name: Build Binary (Darwin arm64)
+      run: GOOS=darwin GOARCH=arm64 make build

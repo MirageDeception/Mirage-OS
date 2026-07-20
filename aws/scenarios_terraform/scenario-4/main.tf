@@ -1,9 +1,28 @@
 data "aws_region" "current" {}
 
+data "aws_vpc" "default" {
+  default = true
+}
+
+data "aws_subnets" "default" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default.id]
+  }
+}
+
+data "aws_ami" "al2023" {
+  most_recent = true
+  owners      = ["amazon"]
+  filter {
+    name   = "name"
+    values = ["al2023-ami-2023.*-arm64"]
+  }
+}
 resource "aws_security_group" "bastion_security_group" {
   name        = "prod-bastion-sg"
   description = "SSH access for production bastion host"
-  vpc_id      = var.vpc_id
+  vpc_id      = data.aws_vpc.default.id
 
   ingress {
     description = "SSH from allowed CIDR"
@@ -30,7 +49,7 @@ resource "aws_security_group" "bastion_security_group" {
 }
 
 resource "aws_network_interface" "bastion_eni" {
-  subnet_id       = var.subnet_id
+  subnet_id       = data.aws_subnets.default.ids[0]
   security_groups = [aws_security_group.bastion_security_group.id]
   description     = "Primary network interface for bastion host"
   
@@ -38,9 +57,8 @@ resource "aws_network_interface" "bastion_eni" {
 }
 
 resource "aws_instance" "bastion_instance" {
-  ami           = var.ami_id
+  ami           = data.aws_ami.al2023.id
   instance_type = "t4g.nano"
-  key_name      = var.key_pair_name
 
   network_interface {
     network_interface_id = aws_network_interface.bastion_eni.id
@@ -127,7 +145,7 @@ EOF
 }
 
 resource "aws_iam_role" "devops_s3_deploy_role" {
-  name                 = "devops-s3-deploy-role"
+  name                 = var.role_name
   description          = "Read access to deployment keys bucket and bastion instance management"
   max_session_duration = 3600
 
@@ -215,7 +233,7 @@ resource "aws_iam_role_policy_attachment" "devops_s3_deploy_policy_attach" {
 }
 
 resource "aws_s3_bucket" "deploy_keys_bucket" {
-  bucket = "devops-deploy-keys-${var.account_id}"
+  bucket = var.bucket_name
 
   tags = {
     Environment = "production"

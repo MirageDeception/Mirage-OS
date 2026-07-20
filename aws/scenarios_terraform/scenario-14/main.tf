@@ -66,7 +66,7 @@ resource "aws_kms_key" "customer_data_key" {
 }
 
 resource "aws_kms_alias" "customer_data_key_alias" {
-  name          = "alias/prod-customer-data-encryption"
+  name          = "alias/${var.kms_alias}"
   target_key_id = aws_kms_key.customer_data_key.key_id
 }
 
@@ -74,7 +74,7 @@ resource "aws_kms_alias" "customer_data_key_alias" {
 # IAM Role (Discovery) — kms-audit-readonly-role
 # ---------------------------------------------------------------
 resource "aws_iam_role" "kms_audit_readonly_role" {
-  name                 = "kms-audit-readonly-role"
+  name                 = var.role_readonly
   description          = "Read-only KMS audit access for security compliance reviews"
   max_session_duration = 3600
 

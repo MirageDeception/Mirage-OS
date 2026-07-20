@@ -11,14 +11,21 @@ description: |
 
 resources:
   - type: iam_role
-    tf_variable: "account_id"
-    purpose: "See details.md"
+    tf_variable: "role_ops"
+    key: "etl-ops-role"
+    purpose: "ETL ops role"
+  - type: iam_role
+    tf_variable: "role_exec"
+    key: "lambda-exec-role"
+    purpose: "Lambda exec role"
   - type: lambda_function
-    tf_variable: "account_id"
-    purpose: "See details.md"
+    tf_variable: "lambda_name"
+    key: "enrichment-lambda"
+    purpose: "User data enrichment"
   - type: dynamodb_table
-    tf_variable: "account_id"
-    purpose: "See details.md"
+    tf_variable: "table_name"
+    key: "enriched-profiles"
+    purpose: "PII data table"
 
 attack_path:
   - "Attacker discovers etl-ops-readonly-role"
@@ -42,6 +49,10 @@ detection:
 terraform:
   required_variables:
     - "account_id"
+    - "role_ops"
+    - "role_exec"
+    - "lambda_name"
+    - "table_name"
   outputs:
     - "role_arn"
     - "function_arn"

@@ -5,7 +5,7 @@ provider "aws" {
 data "aws_region" "current" {}
 
 resource "aws_iam_role" "etl_ops_readonly_role" {
-  name                 = "etl-ops-readonly-role"
+  name                 = var.role_ops
   description          = "Read-only ETL operations access for data engineering team"
   max_session_duration = 3600
 
@@ -15,7 +15,7 @@ resource "aws_iam_role" "etl_ops_readonly_role" {
       {
         Effect = "Allow"
         Principal = {
-          AWS = "arn:aws:iam::$${var.account_id}:root"
+          AWS = "arn:aws:iam::${var.account_id}:root"
         }
         Action = "sts:AssumeRole"
       }
@@ -56,7 +56,7 @@ resource "aws_iam_role_policy_attachment" "etl_ops_readonly_attach" {
 }
 
 resource "aws_iam_role" "user_enrichment_exec_role" {
-  name                 = "prod-user-enrichment-exec-role"
+  name                 = var.role_exec
   description          = "Execution role for prod-user-data-enrichment Lambda function"
   max_session_duration = 3600
 
@@ -106,7 +106,7 @@ resource "aws_iam_policy" "user_enrichment_exec_policy" {
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ]
-        Resource = "arn:aws:logs:$${data.aws_region.current.name}:$${var.account_id}:log-group:/aws/lambda/prod-user-data-enrichment:*"
+        Resource = "arn:aws:logs:${data.aws_region.current.name}:${var.account_id}:log-group:/aws/lambda/${var.lambda_name}:*"
       }
     ]
   })
@@ -118,7 +118,7 @@ resource "aws_iam_role_policy_attachment" "user_enrichment_exec_attach" {
 }
 
 resource "aws_dynamodb_table" "enriched_user_profiles_table" {
-  name         = "prod-enriched-user-profiles"
+  name         = var.table_name
   billing_mode = "PAY_PER_REQUEST"
 
   attribute {
@@ -195,7 +195,7 @@ data "archive_file" "lambda_zip" {
 }
 
 resource "aws_lambda_function" "user_data_enrichment_function" {
-  function_name = "prod-user-data-enrichment"
+  function_name = var.lambda_name
   description   = "Production user data enrichment pipeline - Clearbit and FullContact integration"
   runtime       = "python3.12"
   handler       = "index.handler"
@@ -208,7 +208,7 @@ resource "aws_lambda_function" "user_data_enrichment_function" {
 
   environment {
     variables = {
-      DYNAMODB_TABLE       = "prod-enriched-user-profiles"
+      DYNAMODB_TABLE       = var.table_name
       CLEARBIT_API_KEY     = "sk_prod_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6"
       FULLCONTACT_API_KEY  = "fc_prod_7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v"
       ENRICHMENT_BATCH_SIZE = "50"

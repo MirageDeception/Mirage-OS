@@ -14,6 +14,20 @@ type Config struct {
 	Templates  Templates  `yaml:"templates"`
 	Monitoring Monitoring `yaml:"monitoring"`
 	Operational Operational `yaml:"operational"`
+	Deception   Deception   `yaml:"deception,omitempty"`
+}
+
+// Deception configures how scenarios are deployed.
+type Deception struct {
+	Instances []Instance `yaml:"instances,omitempty"`
+}
+
+// Instance describes a specific deployment configuration for a scenario.
+type Instance struct {
+	Scenario  int               `yaml:"scenario"`
+	Count     int               `yaml:"count,omitempty"`
+	Randomize bool              `yaml:"randomize,omitempty"`
+	Overrides map[string]string `yaml:"overrides,omitempty"`
 }
 
 // Accounts holds the hub and all spoke account configurations.
@@ -48,10 +62,11 @@ type Alerts struct {
 
 // Naming controls how deception resources are named to blend with real infra.
 type Naming struct {
-	Prefix    string                       `yaml:"prefix"`
-	Separator string                       `yaml:"separator"`
-	Patterns  NamingPatterns               `yaml:"patterns"`
-	Overrides map[string]map[string]string `yaml:"overrides,omitempty"` // scenario-N -> type -> name
+	Prefix       string                       `yaml:"prefix"`
+	Separator    string                       `yaml:"separator"`
+	KeywordsFile string                       `yaml:"keywords_file,omitempty"` // path to custom keywords YAML; empty = use embedded defaults
+	Patterns     NamingPatterns               `yaml:"patterns"`
+	Overrides    map[string]map[string]string `yaml:"overrides,omitempty"` // scenario-N -> type -> name
 }
 
 // NamingPatterns defines the default naming template for each resource type.

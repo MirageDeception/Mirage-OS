@@ -4,7 +4,7 @@ data "aws_region" "current" {}
 # IAM Role (Discovery) — log-analysis-readonly-role
 # ---------------------------------------------------------------
 resource "aws_iam_role" "log_analysis_readonly_role" {
-  name                 = "log-analysis-readonly-role"
+  name                 = var.role_readonly
   description          = "Read-only CloudWatch Logs access for application debugging and analysis"
   max_session_duration = 3600
 
@@ -56,7 +56,7 @@ resource "aws_iam_policy" "log_analysis_readonly_policy" {
           "logs:GetLogEvents",
           "logs:FilterLogEvents"
         ]
-        Resource = "arn:aws:logs:${data.aws_region.current.name}:${var.account_id}:log-group:/prod/payment-service/application:*"
+        Resource = "arn:aws:logs:${data.aws_region.current.name}:${var.account_id}:log-group:${var.log_group_payment}:*"
       }
     ]
   })
@@ -66,7 +66,7 @@ resource "aws_iam_policy" "log_analysis_readonly_policy" {
 # CloudWatch Log Group — /prod/payment-service/application
 # ---------------------------------------------------------------
 resource "aws_cloudwatch_log_group" "payment_service_log_group" {
-  name              = "/prod/payment-service/application"
+  name              = var.log_group_payment
   retention_in_days = 30
 
   tags = {

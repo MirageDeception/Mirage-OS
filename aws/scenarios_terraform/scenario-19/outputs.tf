@@ -52,3 +52,8 @@ output "discovery_role_arn" {
   description = "ARN of the discovery role (cfn-audit-readonly-role)"
   value       = aws_iam_role.cfn_audit_readonly_role.arn
 }
+
+output "stack_id" {
+  description = "CloudFormation Stack ID"
+  value       = aws_cloudformation_stack.core_infra_stack.id
+}

@@ -4,7 +4,7 @@ provider "aws" {
 data "aws_region" "current" {}
 
 resource "aws_iam_role" "microservice_auth_role" {
-  name                 = "prod-microservice-auth-role"
+  name                 = var.role_auth
   description          = "Authentication service role for microservices platform"
   max_session_duration = 3600
 
@@ -46,14 +46,14 @@ resource "aws_iam_role_policy" "microservice_auth_policy" {
         Sid      = "ReadOIDCConfig"
         Effect   = "Allow"
         Action   = ["ssm:GetParameter"]
-        Resource = "arn:aws:ssm:${data.aws_region.current.name}:${var.account_id}:parameter/prod/auth/oidc-config"
+        Resource = "arn:aws:ssm:${data.aws_region.current.name}:${var.account_id}:parameter${var.param_auth}"
       }
     ]
   })
 }
 
 resource "aws_iam_role" "microservice_data_role" {
-  name                 = "prod-microservice-data-role"
+  name                 = var.role_data
   description          = "Data layer service role for microservices platform"
   max_session_duration = 3600
 
@@ -95,14 +95,14 @@ resource "aws_iam_role_policy" "microservice_data_policy" {
         Sid      = "ReadLakeCredentials"
         Effect   = "Allow"
         Action   = ["ssm:GetParameter"]
-        Resource = "arn:aws:ssm:${data.aws_region.current.name}:${var.account_id}:parameter/prod/data/lake-credentials"
+        Resource = "arn:aws:ssm:${data.aws_region.current.name}:${var.account_id}:parameter${var.param_data}"
       }
     ]
   })
 }
 
 resource "aws_iam_role" "microservice_admin_role" {
-  name                 = "prod-microservice-admin-role"
+  name                 = var.role_admin
   description          = "Admin console service role for microservices platform"
   max_session_duration = 3600
 
@@ -144,14 +144,14 @@ resource "aws_iam_role_policy" "microservice_admin_policy" {
         Sid      = "ReadConsoleCredentials"
         Effect   = "Allow"
         Action   = ["ssm:GetParameter"]
-        Resource = "arn:aws:ssm:${data.aws_region.current.name}:${var.account_id}:parameter/prod/admin/console-credentials"
+        Resource = "arn:aws:ssm:${data.aws_region.current.name}:${var.account_id}:parameter${var.param_admin}"
       }
     ]
   })
 }
 
 resource "aws_ssm_parameter" "oidc_config_param" {
-  name        = "/prod/auth/oidc-config"
+  name        = var.param_auth
   description = "OIDC provider configuration for production authentication service"
   type        = "String"
   tier        = "Standard"
@@ -166,7 +166,7 @@ resource "aws_ssm_parameter" "oidc_config_param" {
 }
 
 resource "aws_ssm_parameter" "lake_credentials_param" {
-  name        = "/prod/data/lake-credentials"
+  name        = var.param_data
   description = "Data lake service account credentials for production ETL pipelines"
   type        = "String"
   tier        = "Standard"
@@ -181,7 +181,7 @@ resource "aws_ssm_parameter" "lake_credentials_param" {
 }
 
 resource "aws_ssm_parameter" "console_credentials_param" {
-  name        = "/prod/admin/console-credentials"
+  name        = var.param_admin
   description = "Admin console service account credentials for production management plane"
   type        = "String"
   tier        = "Standard"

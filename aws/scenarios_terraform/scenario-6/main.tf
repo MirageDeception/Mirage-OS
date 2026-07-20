@@ -4,7 +4,7 @@ provider "aws" {
 data "aws_region" "current" {}
 
 resource "aws_iam_role" "lambda_ops_readonly_role" {
-  name                 = "lambda-ops-readonly-role"
+  name                 = var.role_ops
   description          = "Read-only Lambda operations access for platform engineering team"
   max_session_duration = 3600
 
@@ -57,7 +57,7 @@ resource "aws_iam_role_policy" "lambda_ops_readonly_policy" {
 }
 
 resource "aws_iam_role" "data_sync_exec_role" {
-  name                 = "prod-data-sync-exec-role"
+  name                 = var.role_exec
   description          = "Execution role for prod-data-sync-processor Lambda function"
   max_session_duration = 3600
 
@@ -97,7 +97,7 @@ resource "aws_iam_role_policy" "data_sync_exec_base_policy" {
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ]
-        Resource = "arn:aws:logs:${data.aws_region.current.name}:${var.account_id}:log-group:/aws/lambda/prod-data-sync-processor:*"
+        Resource = "arn:aws:logs:${data.aws_region.current.name}:${var.account_id}:log-group:/aws/lambda/${var.lambda_name}:*"
       }
     ]
   })
@@ -115,13 +115,13 @@ resource "aws_iam_role_policy" "data_sync_exec_s3_policy" {
         Sid      = "S3ReadArtifacts"
         Effect   = "Allow"
         Action   = ["s3:GetObject"]
-        Resource = "arn:aws:s3:::prod-data-sync-artifacts-${var.account_id}/*"
+        Resource = "arn:aws:s3:::${var.bucket_name}/*"
       },
       {
         Sid      = "S3ListArtifacts"
         Effect   = "Allow"
         Action   = ["s3:ListBucket"]
-        Resource = "arn:aws:s3:::prod-data-sync-artifacts-${var.account_id}"
+        Resource = "arn:aws:s3:::${var.bucket_name}"
       }
     ]
   })
@@ -211,7 +211,7 @@ EOF
 }
 
 resource "aws_lambda_function" "data_sync_processor" {
-  function_name = "prod-data-sync-processor"
+  function_name = var.lambda_name
   description   = "Production data sync processor - ETL pipeline for analytics data lake"
   role          = aws_iam_role.data_sync_exec_role.arn
   handler       = "index.handler"
@@ -232,7 +232,7 @@ resource "aws_lambda_function" "data_sync_processor" {
       STRIPE_API_KEY    = "sk_live_51QxHr8eF59JrNzkYGctjU3af2rq9ef"
       SLACK_WEBHOOK_URL = "https://hooks.slack.com/services/T0PROD01/B0PROD02/xYzAbCdEfGhIjKlMnOpQrStU"
       ENCRYPTION_KEY    = "aes256:9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d"
-      S3_ARTIFACT_BUCKET= "prod-data-sync-artifacts-${var.account_id}"
+      S3_ARTIFACT_BUCKET= var.bucket_name
     }
   }
 
@@ -246,7 +246,7 @@ resource "aws_lambda_function" "data_sync_processor" {
 
 resource "aws_s3_bucket" "data_sync_artifacts_bucket" {
   count  = var.include_s3 ? 1 : 0
-  bucket = "prod-data-sync-artifacts-${var.account_id}"
+  bucket = var.bucket_name
 
   tags = {
     Environment = "production"
@@ -302,8 +302,8 @@ resource "aws_s3_bucket_policy" "data_sync_artifacts_bucket_policy" {
           "s3:ListBucket"
         ]
         Resource = [
-          "arn:aws:s3:::prod-data-sync-artifacts-${var.account_id}",
-          "arn:aws:s3:::prod-data-sync-artifacts-${var.account_id}/*"
+          "arn:aws:s3:::${var.bucket_name}",
+          "arn:aws:s3:::${var.bucket_name}/*"
         ]
       },
       {
@@ -312,8 +312,8 @@ resource "aws_s3_bucket_policy" "data_sync_artifacts_bucket_policy" {
         Principal = "*"
         Action   = "s3:*"
         Resource = [
-          "arn:aws:s3:::prod-data-sync-artifacts-${var.account_id}",
-          "arn:aws:s3:::prod-data-sync-artifacts-${var.account_id}/*"
+          "arn:aws:s3:::${var.bucket_name}",
+          "arn:aws:s3:::${var.bucket_name}/*"
         ]
         Condition = {
           Bool = {
@@ -327,7 +327,7 @@ resource "aws_s3_bucket_policy" "data_sync_artifacts_bucket_policy" {
 
 resource "aws_secretsmanager_secret" "api_credentials_secret" {
   count       = var.include_secrets_manager ? 1 : 0
-  name        = "prod/data-sync/api-credentials"
+  name        = var.secret_api
   description = "Third-party API credentials for production data sync integrations"
   
   tags = {
@@ -368,7 +368,7 @@ resource "aws_secretsmanager_secret_policy" "api_credentials_resource_policy" {
 
 resource "aws_ssm_parameter" "data_sync_config_param" {
   count       = var.include_ssm ? 1 : 0
-  name        = "/prod/data-sync/config"
+  name        = var.param_config
   description = "Production data sync pipeline configuration and service endpoints"
   type        = "String"
   tier        = "Standard"

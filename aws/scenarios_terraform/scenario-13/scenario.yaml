@@ -12,11 +12,13 @@ description: |
 
 resources:
   - type: iam_role
-    tf_variable: "account_id"
-    purpose: "See details.md"
+    tf_variable: "role_readonly"
+    key: "log-analysis-readonly"
+    purpose: "Readonly role"
   - type: cloudwatch_log_group
-    tf_variable: "account_id"
-    purpose: "See details.md"
+    tf_variable: "log_group_payment"
+    key: "payment-service-app"
+    purpose: "Payment log group"
 
 attack_path:
   - "Attacker discovers log-analysis-readonly-role"
@@ -37,6 +39,8 @@ detection:
 terraform:
   required_variables:
     - "account_id"
+    - "role_readonly"
+    - "log_group_payment"
   outputs:
     - "role_arn"
     - "log_group_name"

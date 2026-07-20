@@ -1,5 +1,5 @@
 resource "aws_iam_role" "payment_secrets_readonly_role" {
-  name                 = "payment-secrets-readonly-role"
+  name                 = var.role_name
   description          = "Read-only access to payment gateway secrets for backend services"
   max_session_duration = 3600
 
@@ -61,7 +61,7 @@ resource "aws_iam_role_policy_attachment" "payment_secrets_policy_attach" {
 }
 
 resource "aws_secretsmanager_secret" "stripe_keys_secret" {
-  name        = "prod/payment-gateway/stripe-keys"
+  name        = var.stripe_secret_name
   description = "Stripe live-mode API keys for production payment processing"
   tags = {
     Environment      = "production"
@@ -99,7 +99,7 @@ resource "aws_secretsmanager_secret_policy" "stripe_keys_resource_policy" {
 }
 
 resource "aws_secretsmanager_secret" "braintree_credentials_secret" {
-  name        = "prod/payment-gateway/braintree-credentials"
+  name        = var.braintree_secret_name
   description = "Braintree merchant credentials for production payment fallback processor"
   tags = {
     Environment      = "production"
@@ -137,7 +137,7 @@ resource "aws_secretsmanager_secret_policy" "braintree_credentials_resource_poli
 }
 
 resource "aws_secretsmanager_secret" "service_accounts_secret" {
-  name        = "prod/internal-api/service-accounts"
+  name        = var.service_accounts_secret_name
   description = "Shared service account credentials for inter-service authentication"
   tags = {
     Environment = "production"

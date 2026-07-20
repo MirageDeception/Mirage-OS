@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# exportcreds - Export AWS STS credentials from assume-role JSON
+# Usage: aws sts assume-role ... | exportcreds
+#        eval $(aws sts assume-role ... | exportcreds)
+
+set -euo pipefail
+
+# Read JSON from stdin
+INPUT=$(cat)
+
+# Check jq is available
+if ! command -v jq &>/dev/null; then
+  echo "Error: jq is required. Install with: sudo apt install jq" >&2
+  exit 1
+fi
+
+# Validate input has Credentials
+if ! echo "$INPUT" | jq -e '.Credentials' &>/dev/null; then
+  echo "Error: Input does not contain .Credentials — is this output from 'aws sts assume-role'?" >&2
+  exit 1
+fi
+
+# Extract fields
+ACCESS_KEY=$(echo "$INPUT"    | jq -r '.Credentials.AccessKeyId')
+SECRET_KEY=$(echo "$INPUT"    | jq -r '.Credentials.SecretAccessKey')
+SESSION_TOKEN=$(echo "$INPUT" | jq -r '.Credentials.SessionToken')
+EXPIRATION=$(echo "$INPUT"    | jq -r '.Credentials.Expiration')
+ROLE_ARN=$(echo "$INPUT"      | jq -r '.AssumedRoleUser.Arn // "unknown"')
+
+# Output export statements (use with eval $(...))
+echo "export AWS_ACCESS_KEY_ID=${ACCESS_KEY}"
+echo "export AWS_SECRET_ACCESS_KEY=${SECRET_KEY}"
+echo "export AWS_SESSION_TOKEN=${SESSION_TOKEN}"
+
+# Print info to stderr so it doesn't pollute eval
+echo "" >&2
+echo "✅ Credentials exported for: ${ROLE_ARN}" >&2
+echo "⏰ Expires: ${EXPIRATION}" >&2
+echo "" >&2
+echo "💡 Unset with: unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN" >&2

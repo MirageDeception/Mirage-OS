@@ -11,11 +11,29 @@ description: |
 
 resources:
   - type: iam_role
-    tf_variable: "account_id"
-    purpose: "See details.md"
+    tf_variable: "role_name"
+    key: "readonly-role"
+    purpose: "Readonly role"
   - type: ssm_parameter
-    tf_variable: "account_id"
-    purpose: "See details.md"
+    tf_variable: "param_primary"
+    key: "db/primary"
+    purpose: "Primary DB param"
+  - type: ssm_parameter
+    tf_variable: "param_replica"
+    key: "db/replica"
+    purpose: "Replica DB param"
+  - type: ssm_parameter
+    tf_variable: "param_backup"
+    key: "db/backup-config"
+    purpose: "Backup config param"
+  - type: ssm_parameter
+    tf_variable: "param_encryption"
+    key: "db/encryption-config"
+    purpose: "Encryption config param"
+  - type: ssm_parameter
+    tf_variable: "param_monitoring"
+    key: "db/monitoring"
+    purpose: "Monitoring param"
 
 attack_path:
   - "Attacker discovers infra-params-readonly-role"
@@ -36,5 +54,11 @@ detection:
 terraform:
   required_variables:
     - "account_id"
+    - "role_name"
+    - "param_primary"
+    - "param_replica"
+    - "param_backup"
+    - "param_encryption"
+    - "param_monitoring"
   outputs:
     - "role_arn"

@@ -2,7 +2,7 @@ provider "aws" {
 }
 
 resource "aws_iam_role" "customer_data_readonly_role" {
-  name                 = "customer-data-readonly-role"
+  name                 = var.role_readonly
   description          = "Read-only access to customer data stores for analytics and monitoring"
   max_session_duration = 3600
 
@@ -92,7 +92,7 @@ resource "aws_iam_role_policy" "active_sessions_read_policy" {
 
 resource "aws_dynamodb_table" "customer_profiles_table" {
   count        = var.include_customer_profiles ? 1 : 0
-  name         = "prod-customer-profiles"
+  name         = var.table_profiles
   billing_mode = "PAY_PER_REQUEST"
 
   hash_key  = "customer_id"
@@ -125,7 +125,7 @@ resource "aws_dynamodb_table" "customer_profiles_table" {
 
 resource "aws_dynamodb_table" "active_sessions_table" {
   count        = var.include_active_sessions ? 1 : 0
-  name         = "prod-active-sessions"
+  name         = var.table_sessions
   billing_mode = "PAY_PER_REQUEST"
 
   hash_key  = "session_id"

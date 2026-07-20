@@ -13,16 +13,19 @@ description: |
 
 resources:
   - type: iam_role
-    tf_variable: "account_id"
+    tf_variable: "role_name"
     purpose: "Lure role granting read access to payment secrets"
   - type: secrets_manager
-    tf_variable: "account_id"
+    tf_variable: "stripe_secret_name"
+    key: "stripe-keys"
     purpose: "Stripe API keys (fabricated)"
   - type: secrets_manager
-    tf_variable: "account_id"
+    tf_variable: "braintree_secret_name"
+    key: "braintree-credentials"
     purpose: "Braintree credentials (fabricated)"
   - type: secrets_manager
-    tf_variable: "account_id"
+    tf_variable: "service_accounts_secret_name"
+    key: "service-accounts"
     purpose: "Internal service accounts (fabricated)"
 
 attack_path:
@@ -44,5 +47,9 @@ detection:
 terraform:
   required_variables:
     - "account_id"
+    - "role_name"
+    - "stripe_secret_name"
+    - "braintree_secret_name"
+    - "service_accounts_secret_name"
   outputs:
     - "role_arn"

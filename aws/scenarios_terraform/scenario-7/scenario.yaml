@@ -10,11 +10,17 @@ description: |
 
 resources:
   - type: iam_role
-    tf_variable: "account_id"
-    purpose: "See details.md"
+    tf_variable: "role_discovery"
+    key: "lambda-inject-readonly"
+    purpose: "Discovery role"
+  - type: iam_role
+    tf_variable: "role_exec"
+    key: "data-inject-exec"
+    purpose: "Exec role"
   - type: lambda_function
-    tf_variable: "account_id"
-    purpose: "See details.md"
+    tf_variable: "lambda_name"
+    key: "data-inject-processor"
+    purpose: "Data inject lambda"
 
 attack_path:
   - "Attacker assumes lure role with InvokeFunction permission"
@@ -35,6 +41,9 @@ detection:
 terraform:
   required_variables:
     - "account_id"
+    - "role_discovery"
+    - "role_exec"
+    - "lambda_name"
   outputs:
     - "role_arn"
     - "function_arn"

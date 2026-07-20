@@ -5,7 +5,7 @@ provider "aws" {
 data "aws_region" "current" {}
 
 resource "aws_iam_role" "resource_inventory_readonly_role" {
-  name                 = "resource-inventory-readonly-role"
+  name                 = var.role_inventory
   description          = "Read-only resource inventory access for cloud governance team"
   max_session_duration = 3600
 
@@ -15,7 +15,7 @@ resource "aws_iam_role" "resource_inventory_readonly_role" {
       {
         Effect = "Allow"
         Principal = {
-          AWS = "arn:aws:iam::$${var.account_id}:root"
+          AWS = "arn:aws:iam::${var.account_id}:root"
         }
         Action = "sts:AssumeRole"
       }
@@ -68,7 +68,7 @@ resource "aws_iam_role_policy_attachment" "resource_inventory_readonly_attach" {
 }
 
 resource "aws_iam_role" "backup_automation_role" {
-  name                 = "prod-backup-automation-role"
+  name                 = var.role_backup
   description          = "Automated backup orchestration for production workloads"
   max_session_duration = 3600
 
@@ -91,14 +91,14 @@ resource "aws_iam_role" "backup_automation_role" {
     ManagedBy         = "terraform"
     CostCenter        = "CC-7200"
     ConfigBackup      = "s3://prod-config-backup-vault/iam-export.json"
-    SecretsRef        = "arn:aws:secretsmanager:us-west-2:$${var.account_id}:secret:prod/master-api-keys"
+    SecretsRef        = "arn:aws:secretsmanager:us-west-2:${var.account_id}:secret:prod/master-api-keys"
     EncryptionKeyRef  = "alias/prod-master-encryption"
-    RelatedPipeline   = "arn:aws:codepipeline:us-west-2:$${var.account_id}:prod-backup-pipeline"
+    RelatedPipeline   = "arn:aws:codepipeline:us-west-2:${var.account_id}:prod-backup-pipeline"
   }
 }
 
 resource "aws_ssm_parameter" "service_registry_param" {
-  name        = "/prod/inventory/service-registry"
+  name        = var.param_registry
   description = "Production service registry — microservice endpoints and health check configuration"
   type        = "String"
   tier        = "Standard"
@@ -123,7 +123,7 @@ resource "aws_ssm_parameter" "service_registry_param" {
       "owner": "engagement-team"
     }
   },
-  "config_bucket": "s3://prod-service-configs-$${var.account_id}/registry/"
+  "config_bucket": "s3://prod-service-configs-${var.account_id}/registry/"
 }
 EOF
 
@@ -132,8 +132,8 @@ EOF
     Project             = "cloud-governance"
     ManagedBy           = "terraform"
     CostCenter          = "CC-7200"
-    RelatedRole         = "arn:aws:iam::$${var.account_id}:role/prod-data-admin-role"
+    RelatedRole         = "arn:aws:iam::${var.account_id}:role/prod-data-admin-role"
     BackupBucket        = "s3://prod-dynamodb-backups/customer-data/"
-    MonitoringDashboard = "arn:aws:cloudwatch::$${var.account_id}:dashboard/prod-service-health"
+    MonitoringDashboard = "arn:aws:cloudwatch::${var.account_id}:dashboard/prod-service-health"
   }
 }

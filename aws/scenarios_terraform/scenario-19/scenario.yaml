@@ -12,11 +12,17 @@ description: |
 
 resources:
   - type: iam_role
-    tf_variable: "account_id"
-    purpose: "See details.md"
+    tf_variable: "role_name"
+    key: "cfn-audit"
+    purpose: "CFN audit role"
   - type: ssm_parameter
-    tf_variable: "account_id"
-    purpose: "See details.md"
+    tf_variable: "param_endpoint"
+    key: "core-infra/endpoints"
+    purpose: "Endpoints parameter"
+  - type: ssm_parameter
+    tf_variable: "param_secrets"
+    key: "core-infra/secrets-ref"
+    purpose: "Secrets ref parameter"
 
 attack_path:
   - "Attacker discovers cfn-audit-readonly-role"
@@ -40,6 +46,9 @@ detection:
 terraform:
   required_variables:
     - "account_id"
+    - "role_name"
+    - "param_endpoint"
+    - "param_secrets"
   outputs:
     - "role_arn"
     - "stack_id"

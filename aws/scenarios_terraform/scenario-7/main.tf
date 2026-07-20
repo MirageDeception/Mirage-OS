@@ -5,7 +5,7 @@ data "aws_region" "current" {}
 
 resource "aws_iam_role" "standalone_discovery_role" {
   count                = var.link_to_scenario_6 ? 0 : 1
-  name                 = "lambda-inject-readonly-role"
+  name                 = var.role_discovery
   description          = "Lambda operations access with code update capability for data engineering"
   max_session_duration = 3600
 
@@ -62,7 +62,7 @@ resource "aws_iam_role_policy" "standalone_discovery_policy" {
 
 resource "aws_iam_role" "standalone_exec_role" {
   count                = var.link_to_scenario_6 ? 0 : 1
-  name                 = "prod-data-inject-exec-role"
+  name                 = var.role_exec
   description          = "Execution role for Lambda code injection scenario"
   max_session_duration = 3600
 
@@ -120,7 +120,7 @@ resource "aws_iam_role_policy" "standalone_exec_policy" {
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ]
-        Resource = "arn:aws:logs:${data.aws_region.current.name}:${var.account_id}:log-group:/aws/lambda/prod-data-inject-processor:*"
+        Resource = "arn:aws:logs:${data.aws_region.current.name}:${var.account_id}:log-group:/aws/lambda/${var.lambda_name}:*"
       }
     ]
   })
@@ -153,7 +153,7 @@ EOF
 
 resource "aws_lambda_function" "standalone_lambda" {
   count         = var.link_to_scenario_6 ? 0 : 1
-  function_name = "prod-data-inject-processor"
+  function_name = var.lambda_name
   description   = "Production data injection processor - ETL pipeline"
   role          = aws_iam_role.standalone_exec_role[0].arn
   handler       = "index.handler"

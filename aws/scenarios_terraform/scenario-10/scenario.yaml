@@ -11,11 +11,11 @@ description: |
 
 resources:
   - type: iam_role
-    tf_variable: "account_id"
-    purpose: "See details.md"
+    tf_variable: "role_name"
+    purpose: "Lure role for session store"
   - type: dynamodb_table
-    tf_variable: "account_id"
-    purpose: "See details.md"
+    tf_variable: "table_name"
+    purpose: "Fake active sessions table"
 
 attack_path:
   - "Attacker discovers session-store-readonly-role"
@@ -36,6 +36,8 @@ detection:
 terraform:
   required_variables:
     - "account_id"
+    - "role_name"
+    - "table_name"
   outputs:
     - "role_arn"
     - "table_arn"

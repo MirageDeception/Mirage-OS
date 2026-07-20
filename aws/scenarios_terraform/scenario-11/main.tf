@@ -2,7 +2,7 @@
 # IAM Role — payment-queue-readonly-role
 # ---------------------------------------------------------------
 resource "aws_iam_role" "payment_queue_readonly_role" {
-  name                 = "payment-queue-readonly-role"
+  name                 = var.role_readonly
   description          = "Read-only access to payment event queues for operations team"
   max_session_duration = 3600
 
@@ -74,7 +74,7 @@ resource "aws_iam_policy" "payment_queue_readonly_policy" {
 # SQS FIFO DLQ — prod-payment-events-dlq.fifo
 # ---------------------------------------------------------------
 resource "aws_sqs_queue" "payment_events_dlq" {
-  name                        = "prod-payment-events-dlq.fifo"
+  name                        = "${var.queue_dlq}.fifo"
   fifo_queue                  = true
   content_based_deduplication = true
   sqs_managed_sse_enabled     = true
@@ -92,7 +92,7 @@ resource "aws_sqs_queue" "payment_events_dlq" {
 # SQS FIFO Queue — prod-payment-events.fifo
 # ---------------------------------------------------------------
 resource "aws_sqs_queue" "payment_events_queue" {
-  name                        = "prod-payment-events.fifo"
+  name                        = "${var.queue_main}.fifo"
   fifo_queue                  = true
   content_based_deduplication = true
   sqs_managed_sse_enabled     = true

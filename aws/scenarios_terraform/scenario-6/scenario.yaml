@@ -12,11 +12,29 @@ description: |
 
 resources:
   - type: iam_role
-    tf_variable: "account_id"
-    purpose: "See details.md"
+    tf_variable: "role_ops"
+    key: "lambda-ops-role"
+    purpose: "Lambda ops role"
+  - type: iam_role
+    tf_variable: "role_exec"
+    key: "data-sync-exec-role"
+    purpose: "Lambda exec role"
   - type: lambda_function
-    tf_variable: "account_id"
-    purpose: "See details.md"
+    tf_variable: "lambda_name"
+    key: "data-sync-processor"
+    purpose: "Data sync lambda"
+  - type: s3_bucket
+    tf_variable: "bucket_name"
+    key: "data-sync-artifacts"
+    purpose: "S3 bucket for artifacts"
+  - type: secrets_manager
+    tf_variable: "secret_api"
+    key: "data-sync/api-credentials"
+    purpose: "API credentials secret"
+  - type: ssm_parameter
+    tf_variable: "param_config"
+    key: "data-sync/config"
+    purpose: "Config parameter"
 
 attack_path:
   - "Attacker discovers discovery role ARN"
@@ -37,6 +55,12 @@ detection:
 terraform:
   required_variables:
     - "account_id"
+    - "role_ops"
+    - "role_exec"
+    - "lambda_name"
+    - "bucket_name"
+    - "secret_api"
+    - "param_config"
   outputs:
     - "role_arn"
     - "function_arn"

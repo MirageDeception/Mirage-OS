@@ -18,7 +18,7 @@ func Defaults() *Config {
 			Separator: "-",
 			Patterns: NamingPatterns{
 				S3Bucket:       "{prefix}-{scenario_slug}-{suffix}",
-				IAMRole:        "{prefix}-{scenario_slug}-role",
+				IAMRole:        "{prefix}-{scenario_slug}-{key}",
 				LambdaFunction: "{prefix}-{scenario_slug}-fn",
 				SSMParameter:   "/{prefix}/{scenario_slug}/{key}",
 				DynamoDBTable:  "{prefix}-{scenario_slug}-table",

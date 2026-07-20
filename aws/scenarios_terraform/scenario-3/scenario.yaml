@@ -12,14 +12,28 @@ description: |
 
 resources:
   - type: iam_role
-    tf_variable: "account_id"
+    tf_variable: "role_name"
     purpose: "Lure role for DevOps credential access"
   - type: ssm_parameter
-    tf_variable: "account_id"
-    purpose: "Fake SSH deploy keys in SSM"
-  - type: s3_bucket
-    tf_variable: "account_id"
-    purpose: "Fake deploy keys store"
+    tf_variable: "param_db"
+    key: "database/master-credentials"
+    purpose: "RDS MySQL master credentials"
+  - type: ssm_parameter
+    tf_variable: "param_gh"
+    key: "ci-cd/github-deploy-token"
+    purpose: "GitHub deploy token"
+  - type: ssm_parameter
+    tf_variable: "param_dd"
+    key: "monitoring/datadog-api-keys"
+    purpose: "Datadog API keys"
+  - type: ssm_parameter
+    tf_variable: "param_vpn"
+    key: "vpn/admin-credentials"
+    purpose: "VPN admin credentials"
+  - type: ssm_parameter
+    tf_variable: "param_eks"
+    key: "kubernetes/cluster-admin-kubeconfig"
+    purpose: "EKS cluster admin kubeconfig"
 
 attack_path:
   - "Attacker discovers devops-readonly-role ARN"
@@ -43,6 +57,11 @@ detection:
 terraform:
   required_variables:
     - "account_id"
+    - "role_name"
+    - "param_db"
+    - "param_gh"
+    - "param_dd"
+    - "param_vpn"
+    - "param_eks"
   outputs:
     - "role_arn"
-    - "bucket_arn"

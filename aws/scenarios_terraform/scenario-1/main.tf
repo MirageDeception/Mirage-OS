@@ -1,5 +1,5 @@
 resource "aws_iam_role" "s3_data_access_role" {
-  name                 = "infra-s3-data-readonly-role"
+  name                 = var.role_readonly
   description          = "Read-only access to infrastructure S3 data stores"
   max_session_duration = 3600
 
@@ -59,7 +59,8 @@ resource "aws_iam_role_policy_attachment" "s3_data_access_policy_attach" {
 }
 
 resource "aws_s3_bucket" "terraform_state_bucket" {
-  bucket = "infra-terraform-state-${var.account_id}"
+  bucket        = var.bucket_name
+  force_destroy = true
 
   tags = {
     Environment = "production"

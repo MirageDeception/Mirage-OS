@@ -13,10 +13,12 @@ description: |
 
 resources:
   - type: iam_role
-    tf_variable: "account_id"
+    tf_variable: "role_readonly"
+    key: "s3-data-readonly"
     purpose: "Lure role for S3 Terraform state access"
   - type: s3_bucket
-    tf_variable: "account_id"
+    tf_variable: "bucket_name"
+    key: "terraform-state"
     purpose: "Fake Terraform state backend"
 
 seed:
@@ -43,6 +45,8 @@ detection:
 terraform:
   required_variables:
     - "account_id"
+    - "role_readonly"
+    - "bucket_name"
   outputs:
     - "role_arn"
     - "bucket_arn"

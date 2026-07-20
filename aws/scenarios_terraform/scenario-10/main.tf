@@ -2,7 +2,7 @@
 # IAM Role — session-store-readonly-role
 # ---------------------------------------------------------------
 resource "aws_iam_role" "session_store_readonly_role" {
-  name                 = "session-store-readonly-role"
+  name                 = var.role_name
   description          = "Read-only access to session store for platform monitoring"
   max_session_duration = 3600
 
@@ -65,7 +65,7 @@ resource "aws_iam_policy" "session_store_readonly_policy" {
 # DynamoDB Table — prod-active-sessions
 # ---------------------------------------------------------------
 resource "aws_dynamodb_table" "active_sessions_table" {
-  name         = "prod-active-sessions"
+  name         = var.table_name
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "session_id"
   range_key    = "user_id"

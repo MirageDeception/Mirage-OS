@@ -1,0 +1,12 @@
+# Terraform
+.terraform/
+.terraform.lock.hcl
+*.tfplan
+*.tfstate
+*.tfstate.backup
+backend_override.tf
+resolved.auto.tfvars
+
+# Go binaries
+build/mirage
+mirage-old

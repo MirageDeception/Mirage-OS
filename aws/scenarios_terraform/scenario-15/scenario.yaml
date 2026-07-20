@@ -12,8 +12,17 @@ description: |
 
 resources:
   - type: iam_role
-    tf_variable: "account_id"
-    purpose: "See details.md"
+    tf_variable: "role_audit"
+    key: "sso-audit"
+    purpose: "SSO audit role"
+  - type: iam_role
+    tf_variable: "role_admin"
+    key: "sso-admin"
+    purpose: "SSO admin role"
+  - type: iam_role
+    tf_variable: "role_developer"
+    key: "sso-developer"
+    purpose: "SSO developer role"
 
 attack_path:
   - "Attacker discovers sso-audit-readonly-role"
@@ -34,6 +43,9 @@ detection:
 terraform:
   required_variables:
     - "account_id"
+    - "role_audit"
+    - "role_admin"
+    - "role_developer"
   outputs:
     - "role_arn"
     - "admin_role_arn"

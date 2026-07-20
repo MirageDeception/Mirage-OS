@@ -11,11 +11,17 @@ description: |
 
 resources:
   - type: iam_role
-    tf_variable: "account_id"
-    purpose: "See details.md"
+    tf_variable: "role_inventory"
+    key: "inventory-role"
+    purpose: "Resource inventory role"
+  - type: iam_role
+    tf_variable: "role_backup"
+    key: "backup-role"
+    purpose: "Backup automation role"
   - type: ssm_parameter
-    tf_variable: "account_id"
-    purpose: "See details.md"
+    tf_variable: "param_registry"
+    key: "inventory/service-registry"
+    purpose: "Service registry parameter"
 
 attack_path:
   - "Attacker discovers resource-inventory-readonly-role"
@@ -39,6 +45,9 @@ detection:
 terraform:
   required_variables:
     - "account_id"
+    - "role_inventory"
+    - "role_backup"
+    - "param_registry"
   outputs:
     - "role_arn"
     - "parameter_arn"

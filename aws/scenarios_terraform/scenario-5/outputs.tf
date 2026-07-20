@@ -1,8 +1,8 @@
-data "aws_region" "current" {}
+
 
 output "ecr_repo_uri" {
   description = "URI of the lure ECR repository"
-  value       = "$${var.account_id}.dkr.ecr.$${data.aws_region.current.name}.amazonaws.com/prod-payment-service"
+  value       = aws_ecr_repository.payment_service_repo.repository_url
 }
 
 output "ecr_repo_arn" {

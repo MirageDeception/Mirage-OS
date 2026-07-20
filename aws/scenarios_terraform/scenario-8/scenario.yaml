@@ -12,11 +12,29 @@ description: |
 
 resources:
   - type: iam_role
-    tf_variable: "account_id"
-    purpose: "See details.md"
+    tf_variable: "role_auth"
+    key: "auth-role"
+    purpose: "Auth microservice role"
+  - type: iam_role
+    tf_variable: "role_data"
+    key: "data-role"
+    purpose: "Data microservice role"
+  - type: iam_role
+    tf_variable: "role_admin"
+    key: "admin-role"
+    purpose: "Admin microservice role"
   - type: ssm_parameter
-    tf_variable: "account_id"
-    purpose: "See details.md"
+    tf_variable: "param_auth"
+    key: "auth/oidc-config"
+    purpose: "OIDC config"
+  - type: ssm_parameter
+    tf_variable: "param_data"
+    key: "data/lake-credentials"
+    purpose: "Lake credentials"
+  - type: ssm_parameter
+    tf_variable: "param_admin"
+    key: "admin/console-credentials"
+    purpose: "Console credentials"
 
 attack_path:
   - "Attacker discovers first role ARN in chain"
@@ -38,6 +56,12 @@ detection:
 terraform:
   required_variables:
     - "account_id"
+    - "role_auth"
+    - "role_data"
+    - "role_admin"
+    - "param_auth"
+    - "param_data"
+    - "param_admin"
   outputs:
     - "role_arn_a"
     - "role_arn_b"

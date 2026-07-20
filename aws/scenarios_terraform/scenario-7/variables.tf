@@ -20,3 +20,7 @@ variable "scenario_6_function_arn" {
   default     = ""
   description = "ARN of the scenario 6 lambda function (required if link_to_scenario_6 is true)"
 }
+
+variable "role_discovery" { type = string }
+variable "role_exec" { type = string }
+variable "lambda_name" { type = string }

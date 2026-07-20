@@ -12,10 +12,10 @@ description: |
 
 resources:
   - type: iam_role
-    tf_variable: "account_id"
+    tf_variable: "role_name"
     purpose: "ECR read role for bastion instance profile"
   - type: ecr_repository
-    tf_variable: "account_id"
+    tf_variable: "repository_name"
     purpose: "Fake payment service container registry"
 
 attack_path:
@@ -37,6 +37,8 @@ detection:
 terraform:
   required_variables:
     - "account_id"
+    - "role_name"
+    - "repository_name"
   outputs:
     - "repository_url"
     - "role_arn"

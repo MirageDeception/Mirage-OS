@@ -12,11 +12,11 @@ description: |
 
 resources:
   - type: iam_role
-    tf_variable: "account_id"
-    purpose: "See details.md"
+    tf_variable: "role_name"
+    purpose: "Lure role for SNS"
   - type: sns_topic
-    tf_variable: "account_id"
-    purpose: "See details.md"
+    tf_variable: "topic_name"
+    purpose: "Fake critical alerts topic"
 
 attack_path:
   - "Attacker discovers alerts-readonly-role"
@@ -37,6 +37,8 @@ detection:
 terraform:
   required_variables:
     - "account_id"
+    - "role_name"
+    - "topic_name"
   outputs:
     - "role_arn"
     - "topic_arn"

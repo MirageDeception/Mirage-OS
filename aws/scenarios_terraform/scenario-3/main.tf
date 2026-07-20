@@ -1,7 +1,7 @@
 data "aws_region" "current" {}
 
 resource "aws_iam_role" "infra_config_readonly_role" {
-  name                 = "infra-config-readonly-role"
+  name                 = var.role_name
   description          = "Read-only access to production infrastructure configuration parameters"
   max_session_duration = 3600
 
@@ -48,11 +48,11 @@ resource "aws_iam_policy" "infra_config_policy" {
           "ssm:GetParameters"
         ]
         Resource = [
-          "arn:aws:ssm:${data.aws_region.current.name}:${var.account_id}:parameter/prod/database/master-credentials",
-          "arn:aws:ssm:${data.aws_region.current.name}:${var.account_id}:parameter/prod/ci-cd/github-deploy-token",
-          "arn:aws:ssm:${data.aws_region.current.name}:${var.account_id}:parameter/prod/monitoring/datadog-api-keys",
-          "arn:aws:ssm:${data.aws_region.current.name}:${var.account_id}:parameter/prod/vpn/admin-credentials",
-          "arn:aws:ssm:${data.aws_region.current.name}:${var.account_id}:parameter/prod/kubernetes/cluster-admin-kubeconfig"
+          "arn:aws:ssm:${data.aws_region.current.name}:${var.account_id}:parameter${var.param_db}",
+          "arn:aws:ssm:${data.aws_region.current.name}:${var.account_id}:parameter${var.param_gh}",
+          "arn:aws:ssm:${data.aws_region.current.name}:${var.account_id}:parameter${var.param_dd}",
+          "arn:aws:ssm:${data.aws_region.current.name}:${var.account_id}:parameter${var.param_vpn}",
+          "arn:aws:ssm:${data.aws_region.current.name}:${var.account_id}:parameter${var.param_eks}"
         ]
       },
       {
@@ -76,7 +76,7 @@ resource "aws_iam_role_policy_attachment" "infra_config_policy_attach" {
 }
 
 resource "aws_ssm_parameter" "database_master_credentials" {
-  name        = "/prod/database/master-credentials"
+  name        = var.param_db
   description = "RDS MySQL master credentials for the core platform production database"
   type        = "String"
   tier        = "Standard"
@@ -91,7 +91,7 @@ resource "aws_ssm_parameter" "database_master_credentials" {
 }
 
 resource "aws_ssm_parameter" "github_deploy_token" {
-  name        = "/prod/ci-cd/github-deploy-token"
+  name        = var.param_gh
   description = "GitHub PAT and deploy key for CI/CD pipeline access to platform-monorepo"
   type        = "String"
   tier        = "Standard"
@@ -106,7 +106,7 @@ resource "aws_ssm_parameter" "github_deploy_token" {
 }
 
 resource "aws_ssm_parameter" "datadog_api_keys" {
-  name        = "/prod/monitoring/datadog-api-keys"
+  name        = var.param_dd
   description = "Datadog API and application keys for production monitoring and APM"
   type        = "String"
   tier        = "Standard"
@@ -121,7 +121,7 @@ resource "aws_ssm_parameter" "datadog_api_keys" {
 }
 
 resource "aws_ssm_parameter" "vpn_admin_credentials" {
-  name        = "/prod/vpn/admin-credentials"
+  name        = var.param_vpn
   description = "VPN appliance admin console credentials and endpoint for production network"
   type        = "String"
   tier        = "Standard"
@@ -136,7 +136,7 @@ resource "aws_ssm_parameter" "vpn_admin_credentials" {
 }
 
 resource "aws_ssm_parameter" "eks_kubeconfig" {
-  name        = "/prod/kubernetes/cluster-admin-kubeconfig"
+  name        = var.param_eks
   description = "Cluster-admin kubeconfig for prod-platform-cluster EKS cluster"
   type        = "String"
   tier        = "Advanced"

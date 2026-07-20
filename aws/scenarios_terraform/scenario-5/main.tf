@@ -1,7 +1,7 @@
 data "aws_region" "current" {}
 
 resource "aws_iam_role" "bastion_ecr_role" {
-  name                 = "prod-bastion-ecr-role"
+  name                 = var.role_name
   description          = "ECR read access for production bastion host container operations"
   max_session_duration = 3600
 
@@ -61,12 +61,12 @@ resource "aws_iam_role_policy_attachment" "bastion_ecr_policy_attach" {
 }
 
 resource "aws_iam_instance_profile" "bastion_instance_profile" {
-  name = "prod-bastion-ecr-profile"
+  name = "${var.role_name}-profile"
   role = aws_iam_role.bastion_ecr_role.name
 }
 
 resource "aws_ecr_repository" "payment_service_repo" {
-  name                 = "prod-payment-service"
+  name                 = var.repository_name
   image_tag_mutability = "IMMUTABLE"
 
   image_scanning_configuration {

@@ -2,14 +2,13 @@ package naming
 
 import (
 	"fmt"
+	"os"
 	"strings"
-
-	"github.com/mirage-security/mirage/internal/config"
 )
 
 // GenerateTFVars generates a resolved.tfvars file content from resolved names.
 // requiredVars is the list of Terraform variable names from the scenario manifest.
-// resolved is the map of resourceType → resolvedName from ResolveAll.
+// resolved is the map of tf_variable → resolvedName.
 // accountID and region are added unconditionally (all scenarios need them).
 func GenerateTFVars(
 	requiredVars []string,
@@ -28,9 +27,6 @@ func GenerateTFVars(
 		"region":     region,
 	}
 
-	// Map resolved resource types to their Terraform variable names.
-	// The mapping is: tf variable name → resource type key.
-	// Convention: if the variable name matches a resource type key, use it directly.
 	for k, v := range resolved {
 		allVars[k] = v
 	}
@@ -50,17 +46,11 @@ func GenerateTFVars(
 }
 
 // WriteTFVars writes the tfvars content to a file at the given path.
-func WriteTFVars(path string, content string) error {
-	import_os := func() error {
-		// Imported via os package in the actual implementation.
-		return nil
+// The file is written with 0600 permissions (operator-only read/write).
+func WriteTFVars(path, content string) error {
+	if err := os.WriteFile(path, []byte(content), 0600); err != nil {
+		return fmt.Errorf("write tfvars %s: %w", path, err)
 	}
-	_ = import_os
-
-	// Write to path with standard file permissions.
-	// Actual implementation uses os.WriteFile.
-	_ = path
-	_ = content
 	return nil
 }
 
@@ -68,61 +58,4 @@ func WriteTFVars(path string, content string) error {
 // Convention: "scenario-N" where N is the scenario number.
 func ScenarioKey(number int) string {
 	return fmt.Sprintf("scenario-%d", number)
-}
-
-// TFVarNameForResourceType maps a resource type key to its Terraform variable name.
-// This bridges the naming system's resource type keys to the actual TF variable names
-// used in the scenario templates.
-func TFVarNameForResourceType(resourceType string) string {
-	// Most scenarios use these conventional variable names.
-	mapping := map[string]string{
-		"s3_bucket":           "bucket_name",
-		"iam_role":            "role_name",
-		"lambda_function":     "function_name",
-		"ssm_parameter":       "parameter_name",
-		"dynamodb_table":      "table_name",
-		"sqs_queue":           "queue_name",
-		"sns_topic":           "topic_name",
-		"kms_key_alias":       "key_alias",
-		"secrets_manager":     "secret_name",
-		"ecr_repository":      "repository_name",
-		"cloudwatch_log_group": "log_group_name",
-	}
-	if v, ok := mapping[resourceType]; ok {
-		return v
-	}
-	return resourceType
-}
-
-// BuildTFVarsFromConfig is the high-level helper used by scenario deploy.
-// It resolves all names and generates the complete tfvars content.
-func BuildTFVarsFromConfig(
-	resolver *Resolver,
-	cfg *config.Config,
-	scenarioNum int,
-	slug string,
-	requiredTFVars []string,
-	resourceTypes []string,
-	accountID, region string,
-) (string, error) {
-	key := ScenarioKey(scenarioNum)
-
-	// Resolve all resource names.
-	resolved, err := resolver.ResolveAll(key, slug, resourceTypes, nil)
-	if err != nil {
-		return "", fmt.Errorf("resolve names for scenario %d: %w", scenarioNum, err)
-	}
-
-	// Build the TF variable map (resource type → tf var name → value).
-	tfVarValues := map[string]string{
-		"account_id": accountID,
-		"region":     region,
-	}
-	for rt, name := range resolved {
-		tfVarName := TFVarNameForResourceType(rt)
-		tfVarValues[tfVarName] = name
-	}
-
-	// Generate the tfvars content.
-	return GenerateTFVars(requiredTFVars, tfVarValues, accountID, region, nil)
 }

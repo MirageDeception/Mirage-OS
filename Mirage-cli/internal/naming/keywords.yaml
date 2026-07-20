@@ -1,0 +1,48 @@
+# Mirage default naming keywords
+# These words are used to generate realistic-sounding resource names
+# that blend with real cloud infrastructure.
+#
+# Edit this file or provide your own with: mirage init --keywords-file /path/to/file.yaml
+# or: mirage config set naming.keywords_file /path/to/file.yaml
+
+prefixes:
+  - payments
+  - analytics
+  - platform
+  - core
+  - identity
+  - security
+  - infra
+  - devops
+  - data
+  - api
+  - gateway
+  - auth
+  - billing
+  - reporting
+  - compliance
+  - ml
+  - pipeline
+  - storage
+  - archive
+  - audit
+
+teams:
+  - backend
+  - frontend
+  - sre
+  - fintech
+  - growth
+  - trust
+  - risk
+  - ops
+  - cloud
+  - eng
+
+environments:
+  - prod
+  - staging
+  - sandbox
+  - shared
+  - global
+  - corp

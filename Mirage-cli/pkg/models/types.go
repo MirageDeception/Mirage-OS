@@ -81,9 +81,10 @@ type ScenarioManifest struct {
 
 // ScenarioResource describes a resource within a scenario.
 type ScenarioResource struct {
-	Type       string `yaml:"type"`       // s3_bucket, iam_role, lambda, etc.
+	Type       string `yaml:"type"`        // s3_bucket, iam_role, lambda, etc.
 	TFVariable string `yaml:"tf_variable"` // the terraform variable name
 	Purpose    string `yaml:"purpose"`
+	Key        string `yaml:"key,omitempty"` // for resolving resources like ssm parameters
 }
 
 // SeedItem describes fake data to upload post-deploy.

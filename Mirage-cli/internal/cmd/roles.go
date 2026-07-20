@@ -51,8 +51,9 @@ Deploy order:
 
 func newRolesDeployCmd() *cobra.Command {
 	var (
-		flagSpoke     string
-		flagAllSpokes bool
+		flagSpoke       string
+		flagAllSpokes   bool
+		flagBootstrapRole string
 	)
 
 	cmd := &cobra.Command{
@@ -141,7 +142,19 @@ func newRolesDeployCmd() *cobra.Command {
 			for _, spoke := range targetSpokes {
 				bold.Printf("  ▶ Spoke: %s (%s)\n", spoke.Alias, spoke.ID)
 
-				result, err := roles.DeployForSpoke(ctx, cfg.Accounts.Hub.ID, spoke, runner, templatesDir, mirageDir, GlobalDryRun)
+				// Assume bootstrap role in spoke
+				roleARN := fmt.Sprintf("arn:aws:iam::%s:role/%s", spoke.ID, flagBootstrapRole)
+				creds, err := awsctx.AssumeRole(ctx, cfg.Region, GlobalProfile, roleARN, "mirage-roles-deploy", "")
+				if err != nil {
+					color.Red("    ✗ Failed to assume bootstrap role: %s\n", err)
+					errs = append(errs, fmt.Sprintf("%s: assume bootstrap role: %s", spoke.Alias, err))
+					continue
+				}
+
+				// Create a runner with the assumed credentials for this spoke
+				spokeRunner := runner.WithCredentials(creds.AccessKeyID, creds.SecretAccessKey, creds.SessionToken, cfg.Region)
+
+				result, err := roles.DeployForSpoke(ctx, cfg.Accounts.Hub.ID, spoke, spokeRunner, templatesDir, mirageDir, GlobalDryRun)
 				if err != nil {
 					color.Red("    ✗ Failed: %s\n", err)
 					errs = append(errs, fmt.Sprintf("%s: %s", spoke.Alias, err))
@@ -189,6 +202,7 @@ func newRolesDeployCmd() *cobra.Command {
 
 	cmd.Flags().StringVar(&flagSpoke, "spoke", "", "Deploy roles into a single spoke by alias")
 	cmd.Flags().BoolVar(&flagAllSpokes, "all-spokes", false, "Deploy roles into all configured spokes")
+	cmd.Flags().StringVar(&flagBootstrapRole, "bootstrap-role", "OrganizationAccountAccessRole", "Role name to assume in spoke for initial deployment")
 	return cmd
 }
 

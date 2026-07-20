@@ -12,10 +12,10 @@ description: |
 
 resources:
   - type: iam_role
-    tf_variable: "account_id"
+    tf_variable: "role_name"
     purpose: "Instance profile role for bastion"
   - type: s3_bucket
-    tf_variable: "account_id"
+    tf_variable: "bucket_name"
     purpose: "Deploy keys store linked to bastion"
 
 attack_path:
@@ -37,6 +37,8 @@ detection:
 terraform:
   required_variables:
     - "account_id"
+    - "role_name"
+    - "bucket_name"
   outputs:
     - "instance_id"
     - "role_arn"

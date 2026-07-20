@@ -12,11 +12,13 @@ description: |
 
 resources:
   - type: iam_role
-    tf_variable: "account_id"
-    purpose: "See details.md"
+    tf_variable: "role_readonly"
+    key: "kms-audit-readonly"
+    purpose: "Readonly role"
   - type: kms_key_alias
-    tf_variable: "account_id"
-    purpose: "See details.md"
+    tf_variable: "kms_alias"
+    key: "customer-data-encryption"
+    purpose: "KMS alias"
 
 attack_path:
   - "Attacker discovers kms-audit-readonly-role"
@@ -37,6 +39,8 @@ detection:
 terraform:
   required_variables:
     - "account_id"
+    - "role_readonly"
+    - "kms_alias"
   outputs:
     - "role_arn"
     - "key_arn"

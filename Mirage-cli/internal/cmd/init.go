@@ -11,17 +11,19 @@ import (
 	"github.com/spf13/cobra"
 	awsctx "github.com/mirage-security/mirage/internal/awsctx"
 	"github.com/mirage-security/mirage/internal/config"
+	"github.com/mirage-security/mirage/internal/naming"
 )
 
 func newInitCmd() *cobra.Command {
 	var (
-		flagHub      string
-		flagSpokes   []string
-		flagEmails   []string
-		flagPrefix   string
-		flagCatalogue string
-		flagOrg      bool
-		flagNoOrg    bool
+		flagHub         string
+		flagSpokes      []string
+		flagEmails      []string
+		flagPrefix      string
+		flagCatalogue   string
+		flagOrg         bool
+		flagNoOrg       bool
+		flagKeywordsFile string
 	)
 
 	cmd := &cobra.Command{
@@ -49,6 +51,11 @@ Non-interactive mode (CI/scripting):
 
 			cfg := config.Defaults()
 
+			// Apply keywords file to config if provided.
+			if flagKeywordsFile != "" {
+				cfg.Naming.KeywordsFile = flagKeywordsFile
+			}
+
 			if nonInteractive {
 				return runInitNonInteractive(ctx, cfg, flagHub, flagSpokes, flagEmails, flagPrefix, flagCatalogue)
 			}
@@ -59,10 +66,11 @@ Non-interactive mode (CI/scripting):
 	cmd.Flags().StringVar(&flagHub, "hub", "", "Hub account ID (e.g. 123456789012)")
 	cmd.Flags().StringArrayVar(&flagSpokes, "spoke", nil, "Spoke account in alias:account-id format (repeatable)")
 	cmd.Flags().StringArrayVar(&flagEmails, "email", nil, "Alert email address (repeatable)")
-	cmd.Flags().StringVar(&flagPrefix, "prefix", "corp", "Resource naming prefix")
+	cmd.Flags().StringVar(&flagPrefix, "prefix", "", "Resource naming prefix (default: random keyword)")
 	cmd.Flags().StringVar(&flagCatalogue, "catalogue", "sqlite", "Catalogue backend: sqlite | dynamodb")
 	cmd.Flags().BoolVar(&flagOrg, "org", false, "This is an AWS Organizations account")
 	cmd.Flags().BoolVar(&flagNoOrg, "no-org", false, "Standalone (not Organizations) hub")
+	cmd.Flags().StringVar(&flagKeywordsFile, "keywords-file", "", "Path to custom keywords YAML for naming (default: built-in keywords)")
 	return cmd
 }
 
@@ -127,11 +135,22 @@ func runInitInteractive(ctx context.Context, cfg *config.Config) error {
 		yellow.Println("  ⚠ No spokes configured. Add spokes later with `mirage config set` or re-run `mirage init`.")
 	}
 
-	// Step 5: Naming prefix.
+	// Step 5: Naming prefix — load keywords and suggest a random one.
 	cyan.Println("\n[5/6] Resource Naming")
 	fmt.Println("  Resources are named to blend with your real infrastructure.")
 	fmt.Printf("  Pattern example: {prefix}-terraform-state-{suffix}\n")
-	prefix := promptString("  Naming prefix [corp]: ", "corp")
+
+	kw, kwErr := naming.LoadKeywords(cfg.Naming.KeywordsFile)
+	var suggested string
+	if kwErr == nil {
+		suggested = kw.RandomPrefix()
+		fmt.Printf("  Suggested prefix (from keywords): %s\n", color.CyanString(suggested))
+		fmt.Printf("  Tip: provide your own with --keywords-file or edit ~/.mirage/keywords.yaml\n")
+	} else {
+		suggested = "corp"
+	}
+
+	prefix := promptString(fmt.Sprintf("  Naming prefix [%s]: ", suggested), suggested)
 	cfg.Naming.Prefix = prefix
 	green.Printf("  ✓ Prefix: %s\n", prefix)
 	fmt.Printf("  Example: %s-terraform-state-a3f9\n", prefix)
@@ -190,9 +209,17 @@ func runInitNonInteractive(ctx context.Context, cfg *config.Config, hub string, 
 	}
 
 	cfg.Alerts.Emails = emails
+
+	// Resolve prefix: flag > random keyword > "corp"
 	if prefix != "" {
 		cfg.Naming.Prefix = prefix
+	} else {
+		kw, err := naming.LoadKeywords(cfg.Naming.KeywordsFile)
+		if err == nil {
+			cfg.Naming.Prefix = kw.RandomPrefix()
+		}
 	}
+
 	if catalogue != "" {
 		cfg.Catalogue.Backend = catalogue
 	}
@@ -201,7 +228,7 @@ func runInitNonInteractive(ctx context.Context, cfg *config.Config, hub string, 
 		return fmt.Errorf("save config: %w", err)
 	}
 
-	color.Green("✓ Config saved to ~/.mirage/config.yaml")
+	color.Green("✓ Config saved to ~/.mirage/config.yaml (prefix: %s)", cfg.Naming.Prefix)
 	return nil
 }
 
@@ -210,7 +237,7 @@ func promptYesNo(prompt string, defaultYes bool) bool {
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Print(prompt)
 	answer, _ := reader.ReadString('\n')
-	answer = strings.TrimSpace(strings.ToLower(answer))
+	answer = strings.TrimSpace(strings.ToLower(eraseBackspaces(answer)))
 	if answer == "" {
 		return defaultYes
 	}
@@ -222,9 +249,30 @@ func promptString(prompt, defaultVal string) string {
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Print(prompt)
 	val, _ := reader.ReadString('\n')
-	val = strings.TrimSpace(val)
+	val = strings.TrimSpace(eraseBackspaces(val))
 	if val == "" {
 		return defaultVal
 	}
 	return val
+}
+
+// eraseBackspaces processes backspace/DEL characters in a string so that
+// terminals sending raw \x7f (DEL) or \x08 (BS) bytes work correctly.
+// This handles the case where the OS line discipline does not strip these
+// before delivering the line to the process (e.g. certain terminal emulators,
+// tmux, or non-standard stty configurations).
+func eraseBackspaces(s string) string {
+	runes := []rune(s)
+	result := make([]rune, 0, len(runes))
+	for _, r := range runes {
+		switch r {
+		case '\x7f', '\x08': // DEL or BS
+			if len(result) > 0 {
+				result = result[:len(result)-1]
+			}
+		default:
+			result = append(result, r)
+		}
+	}
+	return string(result)
 }

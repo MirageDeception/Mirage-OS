@@ -76,7 +76,7 @@ func CheckInstalled() error {
 
 // Init runs `terraform init` in workDir.
 func (r *Runner) Init(ctx context.Context, workDir string) (*Result, error) {
-	return r.run(ctx, workDir, nil, "init", "-input=false", "-no-color")
+	return r.run(ctx, workDir, nil, "init", "-input=false", "-no-color", "-reconfigure")
 }
 
 // Plan runs `terraform plan` and saves the plan to a file. Returns the plan file path.
@@ -157,7 +157,11 @@ func (r *Runner) DestroyWithVars(ctx context.Context, workDir string, vars map[s
 
 // Output parses `terraform output -json` into a flat string map.
 func (r *Runner) Output(ctx context.Context, workDir string) (map[string]string, error) {
+	oldVerbose := r.Verbose
+	r.Verbose = false
 	result, err := r.run(ctx, workDir, nil, "output", "-json")
+	r.Verbose = oldVerbose
+	
 	if err != nil {
 		return nil, err
 	}

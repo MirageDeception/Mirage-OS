@@ -5,7 +5,7 @@ provider "aws" {
 data "aws_region" "current" {}
 
 resource "aws_iam_role" "cfn_audit_readonly_role" {
-  name                 = "cfn-audit-readonly-role"
+  name                 = var.role_name
   description          = "Read-only CloudFormation audit access for compliance team"
   max_session_duration = 3600
 
@@ -15,7 +15,7 @@ resource "aws_iam_role" "cfn_audit_readonly_role" {
       {
         Effect = "Allow"
         Principal = {
-          AWS = "arn:aws:iam::$${var.account_id}:root"
+          AWS = "arn:aws:iam::${var.account_id}:root"
         }
         Action = "sts:AssumeRole"
       }
@@ -57,7 +57,7 @@ resource "aws_iam_role_policy_attachment" "cfn_audit_readonly_attach" {
 }
 
 resource "aws_ssm_parameter" "infra_endpoint_param" {
-  name        = "/prod/core-infra/endpoints"
+  name        = var.param_endpoint
   description = "Production core infrastructure service endpoints"
   type        = "String"
   tier        = "Standard"
@@ -82,15 +82,15 @@ EOF
 }
 
 resource "aws_ssm_parameter" "infra_secrets_param" {
-  name        = "/prod/core-infra/secrets-ref"
+  name        = var.param_secrets
   description = "Production core infrastructure secrets reference map"
   type        = "String"
   tier        = "Standard"
   value       = <<EOF
 {
-  "database_password_ref": "arn:aws:secretsmanager:us-west-2:$${var.account_id}:secret:prod/core-db/master",
-  "api_key_ref": "arn:aws:secretsmanager:us-west-2:$${var.account_id}:secret:prod/api-gateway/key",
-  "redis_auth_ref": "arn:aws:secretsmanager:us-west-2:$${var.account_id}:secret:prod/redis/auth-token",
+  "database_password_ref": "arn:aws:secretsmanager:us-west-2:${var.account_id}:secret:prod/core-db/master",
+  "api_key_ref": "arn:aws:secretsmanager:us-west-2:${var.account_id}:secret:prod/api-gateway/key",
+  "redis_auth_ref": "arn:aws:secretsmanager:us-west-2:${var.account_id}:secret:prod/redis/auth-token",
   "last_audit": "2026-04-20T14:30:00Z"
 }
 EOF
@@ -101,4 +101,34 @@ EOF
     ManagedBy   = "terraform"
     CostCenter  = "CC-1050"
   }
+}
+
+resource "aws_cloudformation_stack" "core_infra_stack" {
+  name = "prod-core-infra-stack-${var.account_id}"
+
+  template_body = <<STACK
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "DummyResource": {
+      "Type": "AWS::SSM::Parameter",
+      "Properties": {
+        "Type": "String",
+        "Value": "dummy",
+        "Name": "/prod/dummy/cfn-${var.account_id}"
+      }
+    }
+  },
+  "Outputs": {
+    "DatabasePassword": {
+      "Value": "Pr0d#Db$M@ster!2026xKqL9",
+      "Description": "Production database master password"
+    },
+    "ApiKey": {
+      "Value": "ak_prod_V8kN3mP7qR2wX5jL9tY4bF6hC1dA0eG",
+      "Description": "Production API Gateway API key"
+    }
+  }
+}
+STACK
 }
