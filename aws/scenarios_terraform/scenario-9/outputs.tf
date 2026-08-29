@@ -22,3 +22,17 @@ output "active_sessions_table_arn" {
   description = "ARN of the active sessions table"
   value       = var.include_active_sessions ? aws_dynamodb_table.active_sessions_table[0].arn : null
 }
+
+output "decoy_resources" {
+  description = "JSON array of decoy resources for EventBridge rule generation"
+  value = jsonencode([
+    {
+      category  = "iam"
+      resources = aws_iam_role.customer_data_readonly_role.name
+    },
+    {
+      category  = "dynamodb"
+      resources = "prod-customer-profiles,prod-active-sessions"
+    },
+  ])
+}

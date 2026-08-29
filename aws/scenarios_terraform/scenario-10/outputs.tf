@@ -12,3 +12,17 @@ output "table_name" {
   description = "Name of the lure DynamoDB table"
   value       = aws_dynamodb_table.active_sessions_table.id
 }
+
+output "decoy_resources" {
+  description = "JSON-formatted string of deployed resources for EventBridge rule generation"
+  value       = jsonencode([
+    {
+      category  = "iam"
+      resources = "session-store-readonly-role"
+    },
+    {
+      category  = "dynamodb"
+      resources = "prod-active-sessions"
+    }
+  ])
+}

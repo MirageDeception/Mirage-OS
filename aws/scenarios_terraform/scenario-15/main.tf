@@ -1,3 +1,18 @@
+# NOTE TO OPEN-SOURCE USERS:
+# The resources in this scenario have been deployed with realistic, hardcoded names by default.
+# You can safely rename any resource manually in this file to fit your environment's naming conventions.
+
+variable "account_id" {
+  description = "AWS Account ID"
+  type        = string
+}
+
+variable "saml_metadata_document" {
+  description = "SAML metadata XML document from the IdP (Okta)"
+  type        = string
+  default     = "<?xml version=\"1.0\"?><EntityDescriptor xmlns=\"urn:oasis:names:tc:SAML:2.0:metadata\"></EntityDescriptor>"
+}
+
 provider "aws" {
   region = "us-east-1"
 }

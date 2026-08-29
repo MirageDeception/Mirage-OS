@@ -1,8 +1,9 @@
-# Scenario 5 Details
+# scenario-5
 
-This deception scenario deploys an ECR lure repository designed to hold a container image with fake PII, credentials, and an ASIA token placeholder. It also includes an instance profile that can be optionally linked to the Scenario 4 bastion.
+Description: This deception scenario deploys an ECR lure repository designed to hold a container image with fake PII, credentials, and an ASIA token placeholder. It also includes an instance profile that can be optionally linked to the Scenario 4 bastion.
 
-## Resources Created
-- **IAM Role & Instance Profile** (`prod-bastion-ecr-role`, `prod-bastion-ecr-profile`): Provides ECR read access for a bastion host.
-- **ECR Repository** (`prod-payment-service`): A container registry repository that simulates a payment service.
-- **ECR Repository Policy**: Grants the account root access to pull images.
+**Resources Deployed:**
+- `prod-bastion-ecr-role` (aws_iam_role)
+- `prod-bastion-ecr-readonly-policy` (aws_iam_policy)
+- `prod-bastion-ecr-profile` (aws_iam_instance_profile)
+- `prod-payment-service` (aws_ecr_repository)

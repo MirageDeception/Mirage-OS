@@ -20,10 +20,24 @@ output "backup_config_param_arn" {
 
 output "encryption_config_param_arn" {
   description = "ARN of the /prod/db/encryption-config SSM parameter"
-  value       = "arn:aws:ssm:$${data.aws_region.current.name}:$${var.account_id}:parameter/prod/db/encryption-config"
+  value       = "arn:aws:ssm:${data.aws_region.current.name}:${var.account_id}:parameter/prod/db/encryption-config"
 }
 
 output "monitoring_param_arn" {
   description = "ARN of the /prod/db/monitoring SSM parameter"
-  value       = "arn:aws:ssm:$${data.aws_region.current.name}:$${var.account_id}:parameter/prod/db/monitoring"
+  value       = "arn:aws:ssm:${data.aws_region.current.name}:${var.account_id}:parameter/prod/db/monitoring"
+}
+
+output "decoy_resources" {
+  description = "JSON array of decoy resources for EventBridge rule generation"
+  value = jsonencode([
+    {
+      category  = "iam"
+      resources = aws_iam_role.infra_params_readonly_role.name
+    },
+    {
+      category  = "ssm"
+      resources = "${aws_ssm_parameter.db_primary_param.name},${aws_ssm_parameter.db_replica_param.name},${aws_ssm_parameter.db_backup_config_param.name},${aws_ssm_parameter.db_monitoring_param.name}"
+    },
+  ])
 }

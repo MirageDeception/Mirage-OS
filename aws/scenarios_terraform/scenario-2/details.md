@@ -1,11 +1,10 @@
-# Scenario 2 Details
+# scenario-2
 
-This deception scenario deploys a lure IAM role and AWS Secrets Manager secrets containing fake payment gateway and internal service credentials.
+Description: This deception scenario deploys a lure IAM role and AWS Secrets Manager secrets containing fake payment gateway and internal service credentials.
 
-## Resources Created
-- **IAM Role** (`payment-secrets-readonly-role`): Appears as a payment secrets reader role for backend services.
-- **Secrets Manager Secrets**:
-  - `prod/payment-gateway/stripe-keys`
-  - `prod/payment-gateway/braintree-credentials`
-  - `prod/internal-api/service-accounts`
-- **Secrets Manager Policies**: Allows account root read access to these secrets.
+**Resources Deployed:**
+- `payment-secrets-readonly-role` (aws_iam_role)
+- `payment-secrets-readonly-policy` (aws_iam_policy)
+- `prod/payment-gateway/stripe-keys` (aws_secretsmanager_secret)
+- `prod/payment-gateway/braintree-credentials` (aws_secretsmanager_secret)
+- `prod/internal-api/service-accounts` (aws_secretsmanager_secret)

@@ -1,5 +1,14 @@
+# NOTE TO OPEN-SOURCE USERS:
+# The resources in this scenario have been deployed with realistic, hardcoded names by default.
+# You can safely rename any resource manually in this file to fit your environment's naming conventions.
+
+variable "account_id" {
+  description = "AWS Account ID"
+  type        = string
+}
+
 resource "aws_iam_role" "payment_secrets_readonly_role" {
-  name                 = "payment-secrets-readonly-role"
+  name                 = "payment-secrets-readonly-role-v2"
   description          = "Read-only access to payment gateway secrets for backend services"
   max_session_duration = 3600
 
@@ -25,7 +34,7 @@ resource "aws_iam_role" "payment_secrets_readonly_role" {
 }
 
 resource "aws_iam_policy" "payment_secrets_policy" {
-  name = "payment-secrets-readonly-policy"
+  name = "payment-secrets-readonly-policy-v2"
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -61,7 +70,7 @@ resource "aws_iam_role_policy_attachment" "payment_secrets_policy_attach" {
 }
 
 resource "aws_secretsmanager_secret" "stripe_keys_secret" {
-  name        = "prod/payment-gateway/stripe-keys"
+  name        = "prod/payment-gateway/stripe-keys-v2"
   description = "Stripe live-mode API keys for production payment processing"
   tags = {
     Environment      = "production"
@@ -70,6 +79,7 @@ resource "aws_secretsmanager_secret" "stripe_keys_secret" {
     CostCenter       = "CC-7192"
     RotationSchedule = "90days"
   }
+  recovery_window_in_days       = 0
 }
 
 resource "aws_secretsmanager_secret_version" "stripe_keys_secret_version" {
@@ -99,7 +109,7 @@ resource "aws_secretsmanager_secret_policy" "stripe_keys_resource_policy" {
 }
 
 resource "aws_secretsmanager_secret" "braintree_credentials_secret" {
-  name        = "prod/payment-gateway/braintree-credentials"
+  name        = "prod/payment-gateway/braintree-credentials-v2"
   description = "Braintree merchant credentials for production payment fallback processor"
   tags = {
     Environment      = "production"
@@ -108,6 +118,7 @@ resource "aws_secretsmanager_secret" "braintree_credentials_secret" {
     CostCenter       = "CC-7192"
     RotationSchedule = "90days"
   }
+  recovery_window_in_days       = 0
 }
 
 resource "aws_secretsmanager_secret_version" "braintree_credentials_secret_version" {
@@ -137,7 +148,7 @@ resource "aws_secretsmanager_secret_policy" "braintree_credentials_resource_poli
 }
 
 resource "aws_secretsmanager_secret" "service_accounts_secret" {
-  name        = "prod/internal-api/service-accounts"
+  name        = "prod/internal-api/service-accounts-v2"
   description = "Shared service account credentials for inter-service authentication"
   tags = {
     Environment = "production"
@@ -145,6 +156,7 @@ resource "aws_secretsmanager_secret" "service_accounts_secret" {
     ManagedBy   = "terraform"
     CostCenter  = "CC-7192"
   }
+  recovery_window_in_days       = 0
 }
 
 resource "aws_secretsmanager_secret_version" "service_accounts_secret_version" {

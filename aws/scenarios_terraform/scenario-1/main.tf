@@ -1,5 +1,14 @@
+# NOTE TO OPEN-SOURCE USERS:
+# The resources in this scenario have been deployed with realistic, hardcoded names by default.
+# You can safely rename any resource manually in this file to fit your environment's naming conventions.
+
+variable "account_id" {
+  description = "AWS Account ID"
+  type        = string
+}
+
 resource "aws_iam_role" "s3_data_access_role" {
-  name                 = "infra-s3-data-readonly-role"
+  name                 = "infra-s3-data-readonly-role-v2"
   description          = "Read-only access to infrastructure S3 data stores"
   max_session_duration = 3600
 
@@ -24,7 +33,7 @@ resource "aws_iam_role" "s3_data_access_role" {
 }
 
 resource "aws_iam_policy" "s3_data_access_policy" {
-  name = "infra-s3-data-readonly-policy"
+  name = "infra-s3-data-readonly-policy-v2"
 
   policy = jsonencode({
     Version = "2012-10-17"

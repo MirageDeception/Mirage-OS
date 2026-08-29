@@ -1,3 +1,40 @@
+# NOTE TO OPEN-SOURCE USERS:
+# The resources in this scenario have been deployed with realistic, hardcoded names by default.
+# You can safely rename any resource manually in this file to fit your environment's naming conventions.
+
+variable "account_id" {
+  description = "AWS Account ID"
+  type        = string
+}
+
+variable "vpc_id" {
+  description = "VPC ID to deploy the bastion host into"
+  type        = string
+}
+
+variable "subnet_id" {
+  description = "Subnet ID for the bastion host ENI"
+  type        = string
+}
+
+variable "ami_id" {
+  description = "AMI ID for the bastion EC2 instance"
+  type        = string
+  default     = "ami-0c2ab3b8efb09f272"
+}
+
+variable "key_pair_name" {
+  description = "EC2 key pair name for bastion SSH access"
+  type        = string
+  default     = "bastion-keypair"
+}
+
+variable "allowed_ssh_cidr" {
+  description = "CIDR block allowed to SSH to the bastion"
+  type        = string
+  default     = "10.0.0.0/8"
+}
+
 data "aws_region" "current" {}
 
 resource "aws_security_group" "bastion_security_group" {

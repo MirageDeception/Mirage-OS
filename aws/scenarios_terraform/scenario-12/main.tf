@@ -1,3 +1,12 @@
+# NOTE TO OPEN-SOURCE USERS:
+# The resources in this scenario have been deployed with realistic, hardcoded names by default.
+# You can safely rename any resource manually in this file to fit your environment's naming conventions.
+
+variable "account_id" {
+  description = "AWS Account ID"
+  type        = string
+}
+
 data "aws_region" "current" {}
 
 # ---------------------------------------------------------------
@@ -116,7 +125,7 @@ resource "aws_sns_topic_policy" "critical_alerts_topic_policy" {
 resource "aws_sns_topic_subscription" "https_subscription" {
   topic_arn = aws_sns_topic.critical_alerts_topic.arn
   protocol  = "https"
-  endpoint  = "https://hooks.prod.svc.internal/alerts/critical"
+  endpoint  = "https://httpstat.us/200"
 }
 
 # ---------------------------------------------------------------
