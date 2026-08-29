@@ -52,3 +52,17 @@ output "discovery_role_arn" {
   description = "ARN of the discovery role (cfn-audit-readonly-role)"
   value       = aws_iam_role.cfn_audit_readonly_role.arn
 }
+
+output "decoy_resources" {
+  description = "JSON array of decoy resources for EventBridge rule generation"
+  value = jsonencode([
+    {
+      category  = "iam"
+      resources = aws_iam_role.cfn_audit_readonly_role.name
+    },
+    {
+      category  = "ssm"
+      resources = "${aws_ssm_parameter.infra_endpoint_param.name},${aws_ssm_parameter.infra_secrets_param.name}"
+    },
+  ])
+}

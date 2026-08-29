@@ -1,9 +1,8 @@
-# Deception Scenario 16 - KMS Key Lure
+# scenario-14
 
-**Description:**
-KMS key lure with a fake customer data encryption key. The lure role can describe and list the keys, but decryption is explicitly denied.
+Description: KMS key lure with a fake customer data encryption key. The lure role can describe and list the keys, but decryption is explicitly denied.
 
-**Resources Created:**
-1. `prod-customer-data-encryption` (KMS Key & Alias) - Customer-managed symmetric key. Key policy explicitly denies decryption operations.
-2. `kms-audit-readonly-role` (IAM Role) - Grants describe/list access to KMS keys for audit purposes.
-3. `kms-audit-readonly-policy` (IAM Policy) - Allows KMS list and describe actions, but strictly denies decryption operations.
+**Resources Deployed:**
+- `alias/prod-customer-data-encryption` (aws_kms_alias)
+- `kms-audit-readonly-role` (aws_iam_role)
+- `kms-audit-readonly-policy` (aws_iam_policy)

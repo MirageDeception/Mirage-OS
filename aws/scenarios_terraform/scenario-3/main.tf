@@ -1,3 +1,12 @@
+# NOTE TO OPEN-SOURCE USERS:
+# The resources in this scenario have been deployed with realistic, hardcoded names by default.
+# You can safely rename any resource manually in this file to fit your environment's naming conventions.
+
+variable "account_id" {
+  description = "AWS Account ID"
+  type        = string
+}
+
 data "aws_region" "current" {}
 
 resource "aws_iam_role" "infra_config_readonly_role" {

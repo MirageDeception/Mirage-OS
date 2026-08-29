@@ -37,3 +37,21 @@ output "ssm_parameter_name" {
   description = "Name of the data sync config SSM parameter"
   value       = var.include_ssm ? aws_ssm_parameter.data_sync_config_param[0].name : null
 }
+
+output "decoy_resources" {
+  description = "JSON array of decoy resources for EventBridge rule generation"
+  value = jsonencode([
+    {
+      category  = "iam"
+      resources = "${aws_iam_role.lambda_ops_readonly_role.name},${aws_iam_role.data_sync_exec_role.name}"
+    },
+    {
+      category  = "lambda"
+      resources = aws_lambda_function.data_sync_processor.function_name
+    },
+    {
+      category  = "s3"
+      resources = var.include_s3 ? aws_s3_bucket.data_sync_artifacts_bucket[0].id : ""
+    },
+  ])
+}

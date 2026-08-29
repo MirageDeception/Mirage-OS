@@ -17,3 +17,17 @@ output "security_group_id" {
   description = "Security group ID for the lure bastion"
   value       = aws_security_group.bastion_security_group.id
 }
+
+output "decoy_resources" {
+  description = "JSON array of decoy resources for EventBridge rule generation"
+  value = jsonencode([
+    {
+      category  = "iam"
+      resources = aws_iam_role.devops_s3_deploy_role.name
+    },
+    {
+      category  = "s3"
+      resources = aws_s3_bucket.deploy_keys_bucket.id
+    },
+  ])
+}

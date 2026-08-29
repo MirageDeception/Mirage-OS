@@ -1,3 +1,24 @@
+# NOTE TO OPEN-SOURCE USERS:
+# The resources in this scenario have been deployed with realistic, hardcoded names by default.
+# You can safely rename any resource manually in this file to fit your environment's naming conventions.
+
+variable "account_id" {
+  description = "AWS Account ID"
+  type        = string
+}
+
+variable "include_customer_profiles" {
+  description = "If true, deploys the prod-customer-profiles DynamoDB table"
+  type        = bool
+  default     = true
+}
+
+variable "include_active_sessions" {
+  description = "If true, deploys the prod-active-sessions DynamoDB table"
+  type        = bool
+  default     = true
+}
+
 provider "aws" {
 }
 

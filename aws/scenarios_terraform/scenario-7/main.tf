@@ -1,3 +1,30 @@
+# NOTE TO OPEN-SOURCE USERS:
+# The resources in this scenario have been deployed with realistic, hardcoded names by default.
+# You can safely rename any resource manually in this file to fit your environment's naming conventions.
+
+variable "account_id" {
+  description = "AWS Account ID"
+  type        = string
+}
+
+variable "link_to_scenario_6" {
+  description = "If true, attaches this scenario to scenario-6 instead of creating standalone resources"
+  type        = bool
+  default     = false
+}
+
+variable "scenario_6_discovery_role_name" {
+  description = "Name of scenario-6 discovery role (used when link_to_scenario_6 = true)"
+  type        = string
+  default     = ""
+}
+
+variable "scenario_6_function_arn" {
+  description = "ARN of scenario-6 Lambda function (used when link_to_scenario_6 = true)"
+  type        = string
+  default     = ""
+}
+
 provider "aws" {
 }
 

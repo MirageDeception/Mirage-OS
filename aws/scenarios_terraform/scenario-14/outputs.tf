@@ -17,3 +17,17 @@ output "kms_alias_name" {
   description = "Alias of the KMS key"
   value       = aws_kms_alias.customer_data_key_alias.name
 }
+
+output "decoy_resources" {
+  description = "JSON array of decoy resources for EventBridge rule generation"
+  value = jsonencode([
+    {
+      category  = "iam"
+      resources = aws_iam_role.kms_audit_readonly_role.name
+    },
+    {
+      category  = "kms"
+      resources = aws_kms_key.customer_data_key.id
+    },
+  ])
+}
