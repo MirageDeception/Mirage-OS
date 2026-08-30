@@ -15,6 +15,7 @@ Unlike traditional security tools (like EDR or SIEM) that rely on analyzing past
 4. [How Mirage Solves It (Advantages)](#how-mirage-solves-it-advantages)
 5. [Architecture](#architecture)
 6. [Components of the Project](#components-of-the-project)
+7. [Get Involved & Support Project Mirage](#-get-involved--support-project-mirage)
 
 ---
 
