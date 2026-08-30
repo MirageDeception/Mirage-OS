@@ -66,6 +66,7 @@ As enterprise cloud environments expand rapidly across hundreds of accounts, sec
 1. **Alert Fatigue:** Traditional security tools generate massive volumes of alerts based on heuristic patterns, leading to alert fatigue and delayed incident response.
 2. **Post-Breach Discovery:** Many modern breaches (especially credential compromise) are discovered weeks or months after the initial intrusion because legitimate credentials are used for lateral movement, blending in with regular traffic.
 3. **Complex Telemetry:** Centralizing and making sense of API logs (like AWS CloudTrail) across hundreds of isolated Spoke accounts is expensive, noisy, and difficult to manage at scale.
+4. **Distinguishing Compromised Identities:** Identifying when a highly-privileged, legitimate identity has been compromised versus when it is being used by the actual owner is incredibly difficult without high-fidelity tripwires.
 
 ## How Mirage Solves It (Advantages)
 Mirage is built on the philosophy of **Active Defense**:
@@ -90,3 +91,16 @@ The MIRAGE ecosystem is modular and continuously expanding:
 - **The GUI Portal (`Mirage_GUI` Branch):** A Next.js web application that serves as your command center for deploying the Brain, browsing the Deception Catalog, and managing active EventBridge rules.
 - **Deception Catalog (`/scenarios`):** A curated, open-source collection of Terraform templates representing different deception attack scenarios and playbooks (e.g., Credential Theft, S3 Ransomware Bait, Lateral Movement).
 - **Core Infrastructure Scripts:** Backend bash scripts that orchestrate Terraform and the AWS CLI to safely deploy both the Hub Brain and the Spoke decoys.
+
+---
+
+## 🤝 Get Involved & Support Project Mirage
+
+Project Mirage is completely open-source, and we are just getting started! We believe that active defense and deception technology should be accessible to all security teams.
+
+### How You Can Help
+- ⭐ **Star this repository** if you find this project interesting or useful! It helps the community grow and increases visibility.
+- 🛠️ **Contribute Scenarios:** Have an idea for a cool decoy or Honey Attack Path? Submit a PR to add a new scenario to our Deception Catalog!
+- 🐛 **Report Issues:** If you encounter bugs while deploying the portal or AWS infrastructure, please open an issue. 
+
+Let's build a stronger, more proactive cloud security community together!
