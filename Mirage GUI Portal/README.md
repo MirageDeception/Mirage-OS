@@ -2,6 +2,61 @@
 
 Mirage is an automated, scalable enterprise deception platform designed to deploy Honey Attack Paths (decoy infrastructure) across your AWS Spoke accounts. It automatically routes threat telemetry back to a centralized Hub account to detect lateral movement.
 
+## Table of Contents
+1. [Prerequisites](#prerequisites)
+   - [System Prerequisites](#system-prerequisites)
+   - [AWS Prerequisites](#aws-prerequisites)
+2. [Getting Started](#getting-started)
+   - [Installation](#installation)
+   - [Launching the Portal](#launching-the-portal)
+3. [Platform Walkthrough](#platform-walkthrough)
+   - [1. Dashboard, Active Alerts & Settings](#1-dashboard-active-alerts--settings)
+   - [2. Deploy Brain & Remove Brain](#2-deploy-brain--remove-brain)
+   - [3. Deception Catalog](#3-deception-catalog)
+   - [4. Automated Rule Generation](#4-automated-rule-generation)
+   - [5. Active Rules & Scenario Review](#5-active-rules--scenario-review)
+   - [6. History & Notifications](#6-history--notifications)
+   - [7. State Management & Local Databases](#7-state-management--local-databases)
+
+## Prerequisites
+
+### System Prerequisites
+To run the Mirage GUI Portal locally, your system must have the following dependencies installed:
+- **Node.js** (v18 or higher recommended)
+- **npm** (Node Package Manager)
+- **Terraform** (v1.0.0 or higher) - *Required for the backend scripts to provision AWS infrastructure.*
+- **Git** - *For cloning and syncing catalog scenarios.*
+- **AWS CLI** - *Optional but recommended for verifying AWS credentials locally.*
+
+> **Note:** The repository does **not** automatically install these dependencies upon cloning. You must manually install system tools (Terraform/Node.js) and run `npm install` for the project packages.
+
+### AWS Prerequisites
+For Mirage to function correctly, your AWS environments need:
+- **AWS Credentials:** The environment running the portal must have valid AWS credentials configured (e.g., via `~/.aws/credentials` or exported environment variables) that allow it to assume the target deployment roles.
+- **Hub Account (Brain):** An AWS account designated to act as the centralized monitoring hub.
+- **Spoke Accounts:** One or more AWS accounts where the decoy infrastructure will be deployed.
+- **Cross-Account Trust:** The IAM Deployment Roles used by Mirage in the Spoke and Hub accounts must have trust policies allowing the portal's execution environment to assume them.
+
+## Getting Started
+
+### Installation
+Clone the repository and manually install the required Node.js dependencies:
+
+```bash
+git clone https://github.com/MirageDeception/Mirage-OS.git
+cd Mirage-OS
+npm install
+```
+
+### Launching the Portal
+Once dependencies are installed, start the local development server:
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) with your browser to access the portal.
+
 ## Platform Walkthrough
 
 ### 1. Dashboard, Active Alerts & Settings
