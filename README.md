@@ -1,6 +1,6 @@
 # Project Mirage | Enterprise Cloud Deception Platform
 
-Welcome to **Project Mirage**, an open-source enterprise cloud security solution that uses strategic deception to neutralize threats. 
+Welcome to **Project Mirage**, an open-source enterprise **cloud native security solution** that uses strategic deception to neutralize threats. 
 
 Unlike traditional security tools (like EDR or SIEM) that rely on analyzing past behavior to generate alerts, MIRAGE deploys a high-fidelity matrix of decoy assets and bait credentials directly into your environment. It misdirects attackers into isolated traps, triggering immediate, zero-false-positive alerts before core data can be breached.
 
