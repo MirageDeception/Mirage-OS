@@ -1,0 +1,248 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Cloud Deception v2 — CSC Prod Monitoring Brain (913511275171, us-west-2).
+  Separate from v1. Uses deception-v2-* naming to avoid conflicts.
+
+Resources:
+
+  V2AlertsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: deception-v2-alerts
+      Tags:
+        - Key: Project
+          Value: deception-monitoring
+        - Key: ManagedBy
+          Value: cloudformation
+        - Key: Version
+          Value: v2
+
+  V2LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: deception-v2-lambda-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: deception-v2-sns-publish
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: AllowSNSPublish
+                Effect: Allow
+                Action: sns:Publish
+                Resource: !Ref V2AlertsTopic
+      Tags:
+        - Key: Project
+          Value: deception-monitoring
+        - Key: ManagedBy
+          Value: cloudformation
+        - Key: Version
+          Value: v2
+
+  V2EventProcessor:
+    Type: AWS::Lambda::Function
+    DependsOn:
+      - V2LambdaExecutionRole
+      - V2AlertsTopic
+    Properties:
+      FunctionName: deception-v2-event-processor
+      Runtime: python3.11
+      Architectures:
+        - x86_64
+      Handler: index.lambda_handler
+      Role: !GetAtt V2LambdaExecutionRole.Arn
+      Timeout: 30
+      MemorySize: 128
+      Environment:
+        Variables:
+          SNS_TOPIC_ARN: !Ref V2AlertsTopic
+      Code:
+        ZipFile: |
+          import json
+          import boto3
+          import os
+
+          sns = boto3.client('sns')
+          SNS_TOPIC_ARN = os.environ['SNS_TOPIC_ARN']
+
+          RESOURCE_TYPE_MAP = {
+              'aws.s3':             'S3',
+              'aws.ssm':            'SSM',
+              'aws.secretsmanager': 'SecretsManager',
+              'aws.ecr':            'ECR',
+              'aws.lambda':         'Lambda',
+              'aws.iam':            'IAM',
+              'aws.sts':            'STS',
+              'aws.ec2':            'EC2',
+              'aws.dynamodb':       'DynamoDB',
+              'aws.sqs':            'SQS',
+              'aws.sns':            'SNS',
+              'aws.logs':           'CloudWatch Logs',
+              'aws.kms':            'KMS',
+              'aws.cloudformation': 'CloudFormation'
+          }
+
+          WHITELISTED_ARNS = [
+              ':role/WizScanner-Role',
+              ':role/WizAccess-Role'
+          ]
+
+          def get_resource_name(source, params):
+              if source == 'aws.s3':
+                  bucket = params.get('bucketName', 'Unknown')
+                  key = params.get('key', '')
+                  return f"{bucket}/{key}" if key else bucket
+              elif source == 'aws.ssm':
+                  return params.get('name', 'Unknown')
+              elif source == 'aws.secretsmanager':
+                  sid = params.get('secretId', 'Unknown')
+                  return sid.split(':')[-1] if sid.startswith('arn:') else sid
+              elif source == 'aws.ecr':
+                  return params.get('repositoryName', 'Unknown')
+              elif source == 'aws.lambda':
+                  return params.get('functionName', 'Unknown')
+              elif source == 'aws.iam':
+                  return params.get('roleName', 'Unknown')
+              elif source == 'aws.sts':
+                  role_arn = params.get('roleArn', '')
+                  return role_arn.split('/')[-1] if role_arn else 'Unknown'
+              elif source == 'aws.dynamodb':
+                  return params.get('tableName', 'Unknown')
+              elif source == 'aws.sqs':
+                  url = params.get('queueUrl', '')
+                  return url.split('/')[-1] if url else 'Unknown'
+              elif source == 'aws.kms':
+                  return params.get('keyId', 'Unknown')
+              elif source == 'aws.cloudformation':
+                  return params.get('stackName', 'Unknown')
+              return 'Unknown'
+
+          def lambda_handler(event, context):
+              detail = event.get('detail', {})
+              source = event.get('source', 'Unknown')
+              event_name = detail.get('eventName', 'Unknown')
+              request_params = detail.get('requestParameters') or {}
+
+              caller_arn = detail.get('userIdentity', {}).get('arn', '')
+              if any(w in caller_arn for w in WHITELISTED_ARNS):
+                  print(f"Suppressed (whitelisted): {caller_arn}")
+                  return {'statusCode': 200, 'body': 'Whitelisted - suppressed'}
+
+              resource_type = RESOURCE_TYPE_MAP.get(source, 'Unknown')
+              resource_name = get_resource_name(source, request_params)
+
+              subject = f"[v2] Decoy accessed - {resource_type} - {event_name}"[:100]
+
+              message = detail.copy()
+              message['action_status'] = 'FAILED' if detail.get('errorCode') else 'SUCCESS'
+              message['error_code'] = detail.get('errorCode', 'None')
+              message['error_message'] = detail.get('errorMessage', 'None')
+
+              sns.publish(
+                  TopicArn=SNS_TOPIC_ARN,
+                  Subject=subject,
+                  Message=json.dumps(message, indent=2, default=str)
+              )
+
+              print(f"Alert | {source} | {resource_name} | {event_name}")
+              return {'statusCode': 200, 'body': f'Alert: {resource_type} - {resource_name}'}
+      Tags:
+        - Key: Project
+          Value: deception-monitoring
+        - Key: ManagedBy
+          Value: cloudformation
+        - Key: Version
+          Value: v2
+
+  V2LambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    DependsOn: V2EventProcessor
+    Properties:
+      FunctionName: !Ref V2EventProcessor
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceAccount: !Ref AWS::AccountId
+
+  V2GlobalEventBus:
+    Type: AWS::Events::EventBus
+    Properties:
+      Name: deception-v2-global-bus
+
+  V2InvokeLambdaRole:
+    Type: AWS::IAM::Role
+    DependsOn: V2EventProcessor
+    Properties:
+      RoleName: deception-v2-invoke-lambda-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: TrustEventBridge
+            Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref AWS::AccountId
+      Policies:
+        - PolicyName: deception-v2-invoke-lambda-policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: InvokeLambda
+                Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: !GetAtt V2EventProcessor.Arn
+      Tags:
+        - Key: Project
+          Value: deception-monitoring
+        - Key: ManagedBy
+          Value: cloudformation
+        - Key: Version
+          Value: v2
+
+Outputs:
+
+  SNSTopicArn:
+    Description: v2 alerts SNS topic ARN
+    Value: !Ref V2AlertsTopic
+    Export:
+      Name: deception-v2-sns-topic-arn
+
+  LambdaFunctionArn:
+    Description: v2 event processor Lambda ARN
+    Value: !GetAtt V2EventProcessor.Arn
+    Export:
+      Name: deception-v2-lambda-arn
+
+  LambdaFunctionName:
+    Description: v2 event processor Lambda name
+    Value: !Ref V2EventProcessor
+    Export:
+      Name: deception-v2-lambda-name
+
+  GlobalEventBusArn:
+    Description: v2 global event bus ARN
+    Value: !GetAtt V2GlobalEventBus.Arn
+    Export:
+      Name: deception-v2-global-bus-arn
+
+  GlobalEventBusName:
+    Description: v2 global event bus name
+    Value: !Ref V2GlobalEventBus
+    Export:
+      Name: deception-v2-global-bus-name
+
+  InvokeLambdaRoleArn:
+    Description: v2 EventBridge invoke Lambda role ARN
+    Value: !GetAtt V2InvokeLambdaRole.Arn
+    Export:
+      Name: deception-v2-invoke-lambda-role-arn

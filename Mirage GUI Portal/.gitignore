@@ -42,7 +42,7 @@ yarn-error.log*
 next-env.d.ts
 
 # Exclude dynamic terraform states and templates
-/src/templates/
+/src/templates/mirage-os/
 /states/
 /scenarios_terraform/
 db_*.json
