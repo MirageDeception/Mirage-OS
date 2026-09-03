@@ -1,0 +1,245 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  MIRAGE+ Monitoring Brain — Hub Account Service Rules.
+  Contains scalable, generic EventBridge rules per AWS service that forward to the Lambda.
+  (Decoy-specific resource filtering happens in the Spoke accounts)
+
+Resources:
+
+  S3ServiceRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: deception-v2-svc-s3
+      Description: "Routes S3 decoy API calls to the central brain"
+      EventBusName: !ImportValue deception-v2-global-bus-name
+      State: ENABLED_WITH_ALL_CLOUDTRAIL_MANAGEMENT_EVENTS
+      EventPattern:
+        source: [aws.s3]
+        detail-type: [AWS API Call via CloudTrail]
+        detail:
+          eventName: [GetObject, ListBucket, DeleteBucket, PutObject]
+      Targets:
+        - Id: V2Lambda
+          Arn: !ImportValue deception-v2-lambda-arn
+          RoleArn: !ImportValue deception-v2-invoke-lambda-role-arn
+
+  SecretsManagerServiceRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: deception-v2-svc-secretsmanager
+      Description: "Routes Secrets Manager decoy API calls to the central brain"
+      EventBusName: !ImportValue deception-v2-global-bus-name
+      State: ENABLED_WITH_ALL_CLOUDTRAIL_MANAGEMENT_EVENTS
+      EventPattern:
+        source: [aws.secretsmanager]
+        detail-type: [AWS API Call via CloudTrail]
+        detail:
+          eventName: [GetSecretValue, DescribeSecret]
+      Targets:
+        - Id: V2Lambda
+          Arn: !ImportValue deception-v2-lambda-arn
+          RoleArn: !ImportValue deception-v2-invoke-lambda-role-arn
+
+  SSMServiceRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: deception-v2-svc-ssm
+      Description: "Routes SSM Parameter Store decoy API calls to the central brain"
+      EventBusName: !ImportValue deception-v2-global-bus-name
+      State: ENABLED_WITH_ALL_CLOUDTRAIL_MANAGEMENT_EVENTS
+      EventPattern:
+        source: [aws.ssm]
+        detail-type: [AWS API Call via CloudTrail]
+        detail:
+          eventName: [GetParameter, GetParameters, GetParametersByPath]
+      Targets:
+        - Id: V2Lambda
+          Arn: !ImportValue deception-v2-lambda-arn
+          RoleArn: !ImportValue deception-v2-invoke-lambda-role-arn
+
+  STSServiceRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: deception-v2-svc-sts
+      Description: "Routes STS AssumeRole decoy API calls to the central brain"
+      EventBusName: !ImportValue deception-v2-global-bus-name
+      State: ENABLED_WITH_ALL_CLOUDTRAIL_MANAGEMENT_EVENTS
+      EventPattern:
+        source: [aws.sts]
+        detail-type: [AWS API Call via CloudTrail]
+        detail:
+          eventName: [AssumeRole, AssumeRoleWithSAML]
+      Targets:
+        - Id: V2Lambda
+          Arn: !ImportValue deception-v2-lambda-arn
+          RoleArn: !ImportValue deception-v2-invoke-lambda-role-arn
+
+  EC2ServiceRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: deception-v2-svc-ec2
+      Description: "Routes EC2 decoy API calls to the central brain"
+      EventBusName: !ImportValue deception-v2-global-bus-name
+      State: ENABLED_WITH_ALL_CLOUDTRAIL_MANAGEMENT_EVENTS
+      EventPattern:
+        source: [aws.ec2]
+        detail-type: [AWS API Call via CloudTrail]
+        detail:
+          eventName: [StartInstances, AuthorizeSecurityGroupIngress, DescribeInstances]
+      Targets:
+        - Id: V2Lambda
+          Arn: !ImportValue deception-v2-lambda-arn
+          RoleArn: !ImportValue deception-v2-invoke-lambda-role-arn
+
+  ECRServiceRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: deception-v2-svc-ecr
+      Description: "Routes ECR decoy API calls to the central brain"
+      EventBusName: !ImportValue deception-v2-global-bus-name
+      State: ENABLED_WITH_ALL_CLOUDTRAIL_MANAGEMENT_EVENTS
+      EventPattern:
+        source: [aws.ecr]
+        detail-type: [AWS API Call via CloudTrail]
+        detail:
+          eventName: [BatchGetImage, GetDownloadUrlForLayer]
+      Targets:
+        - Id: V2Lambda
+          Arn: !ImportValue deception-v2-lambda-arn
+          RoleArn: !ImportValue deception-v2-invoke-lambda-role-arn
+
+  LambdaServiceRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: deception-v2-svc-lambda
+      Description: "Routes Lambda decoy API calls to the central brain"
+      EventBusName: !ImportValue deception-v2-global-bus-name
+      State: ENABLED_WITH_ALL_CLOUDTRAIL_MANAGEMENT_EVENTS
+      EventPattern:
+        source: [aws.lambda]
+        detail-type: [AWS API Call via CloudTrail]
+        detail:
+          eventName: [GetFunctionConfiguration, GetFunction]
+      Targets:
+        - Id: V2Lambda
+          Arn: !ImportValue deception-v2-lambda-arn
+          RoleArn: !ImportValue deception-v2-invoke-lambda-role-arn
+
+  DynamoDBServiceRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: deception-v2-svc-dynamodb
+      Description: "Routes DynamoDB decoy API calls to the central brain"
+      EventBusName: !ImportValue deception-v2-global-bus-name
+      State: ENABLED_WITH_ALL_CLOUDTRAIL_MANAGEMENT_EVENTS
+      EventPattern:
+        source: [aws.dynamodb]
+        detail-type: [AWS API Call via CloudTrail]
+        detail:
+          eventName: [DescribeTable, Scan, Query, GetItem]
+      Targets:
+        - Id: V2Lambda
+          Arn: !ImportValue deception-v2-lambda-arn
+          RoleArn: !ImportValue deception-v2-invoke-lambda-role-arn
+
+  SQSServiceRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: deception-v2-svc-sqs
+      Description: "Routes SQS decoy API calls to the central brain"
+      EventBusName: !ImportValue deception-v2-global-bus-name
+      State: ENABLED_WITH_ALL_CLOUDTRAIL_MANAGEMENT_EVENTS
+      EventPattern:
+        source: [aws.sqs]
+        detail-type: [AWS API Call via CloudTrail]
+        detail:
+          eventName: [GetQueueAttributes, ReceiveMessage]
+      Targets:
+        - Id: V2Lambda
+          Arn: !ImportValue deception-v2-lambda-arn
+          RoleArn: !ImportValue deception-v2-invoke-lambda-role-arn
+
+  SNSServiceRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: deception-v2-svc-sns
+      Description: "Routes SNS decoy API calls to the central brain"
+      EventBusName: !ImportValue deception-v2-global-bus-name
+      State: ENABLED_WITH_ALL_CLOUDTRAIL_MANAGEMENT_EVENTS
+      EventPattern:
+        source: [aws.sns]
+        detail-type: [AWS API Call via CloudTrail]
+        detail:
+          eventName: [GetTopicAttributes, ListSubscriptionsByTopic, Publish]
+      Targets:
+        - Id: V2Lambda
+          Arn: !ImportValue deception-v2-lambda-arn
+          RoleArn: !ImportValue deception-v2-invoke-lambda-role-arn
+
+  CloudWatchLogsServiceRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: deception-v2-svc-logs
+      Description: "Routes CloudWatch Logs decoy API calls to the central brain"
+      EventBusName: !ImportValue deception-v2-global-bus-name
+      State: ENABLED_WITH_ALL_CLOUDTRAIL_MANAGEMENT_EVENTS
+      EventPattern:
+        source: [aws.logs]
+        detail-type: [AWS API Call via CloudTrail]
+        detail:
+          eventName: [GetLogEvents, FilterLogEvents]
+      Targets:
+        - Id: V2Lambda
+          Arn: !ImportValue deception-v2-lambda-arn
+          RoleArn: !ImportValue deception-v2-invoke-lambda-role-arn
+
+  KMSServiceRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: deception-v2-svc-kms
+      Description: "Routes KMS decoy API calls to the central brain"
+      EventBusName: !ImportValue deception-v2-global-bus-name
+      State: ENABLED_WITH_ALL_CLOUDTRAIL_MANAGEMENT_EVENTS
+      EventPattern:
+        source: [aws.kms]
+        detail-type: [AWS API Call via CloudTrail]
+        detail:
+          eventName: [DescribeKey, Decrypt]
+      Targets:
+        - Id: V2Lambda
+          Arn: !ImportValue deception-v2-lambda-arn
+          RoleArn: !ImportValue deception-v2-invoke-lambda-role-arn
+
+  IAMServiceRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: deception-v2-svc-iam
+      Description: "Routes IAM decoy API calls to the central brain"
+      EventBusName: !ImportValue deception-v2-global-bus-name
+      State: ENABLED_WITH_ALL_CLOUDTRAIL_MANAGEMENT_EVENTS
+      EventPattern:
+        source: [aws.iam]
+        detail-type: [AWS API Call via CloudTrail]
+        detail:
+          eventName: [GetSAMLProvider, ListUsers, ListRoles]
+      Targets:
+        - Id: V2Lambda
+          Arn: !ImportValue deception-v2-lambda-arn
+          RoleArn: !ImportValue deception-v2-invoke-lambda-role-arn
+
+  CloudFormationServiceRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: deception-v2-svc-cloudformation
+      Description: "Routes CloudFormation decoy API calls to the central brain"
+      EventBusName: !ImportValue deception-v2-global-bus-name
+      State: ENABLED_WITH_ALL_CLOUDTRAIL_MANAGEMENT_EVENTS
+      EventPattern:
+        source: [aws.cloudformation]
+        detail-type: [AWS API Call via CloudTrail]
+        detail:
+          eventName: [DescribeStacks, GetTemplate]
+      Targets:
+        - Id: V2Lambda
+          Arn: !ImportValue deception-v2-lambda-arn
+          RoleArn: !ImportValue deception-v2-invoke-lambda-role-arn
