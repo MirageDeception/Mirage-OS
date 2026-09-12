@@ -48,3 +48,9 @@ next-env.d.ts
 db_*.json
 db_*.txt
 *.swp
+
+# Internal and proprietary documentation
+*_context.md
+specialized_instructions.md
+PROJECT_MIRAGE_*.md
+rule_management_*.md
